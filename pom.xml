@@ -120,6 +120,16 @@
                             <autoPublish>true</autoPublish>
                             <waitUntil>published</waitUntil>
                             <skipPublishing>${central.skipPublishing}</skipPublishing>
+                            <!-- The parent pom is a build aggregator only; never
+                                 upload it to Central. (skipPublishing alone isn't
+                                 enough because extensions=true stages every reactor
+                                 pom before per-project skip is checked.) -->
+                            <excludeArtifacts>
+                                <artifact>
+                                    <groupId>io.github.randomcodespace.ai</groupId>
+                                    <artifactId>skills-parent</artifactId>
+                                </artifact>
+                            </excludeArtifacts>
                         </configuration>
                     </plugin>
                 </plugins>

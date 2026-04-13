@@ -72,6 +72,7 @@ jobs:
           echo "skills=${CHANGED}" >> "$GITHUB_OUTPUT"
 
       - name: Bump, build, publish
+        id: publish
         if: steps.detect.outputs.skills != ''
         env:
           OSS_NEXUS_USER: ${{ secrets.OSS_NEXUS_USER }}
@@ -79,6 +80,7 @@ jobs:
           SKILLS: ${{ steps.detect.outputs.skills }}
         run: |
           set -e
+          PUBLISHED=""
           for skill in $SKILLS; do
             module="skills/${skill}"
             if [ ! -f "${module}/pom.xml" ]; then
@@ -93,6 +95,43 @@ jobs:
             mvn -B -ntp -pl "${module}" versions:set \
               -DnewVersion="${NEW}" -DgenerateBackupPoms=false
             mvn -B -ntp -pl "${module}" -am -Prelease deploy
+            echo "::endgroup::"
+            PUBLISHED="${PUBLISHED}${skill}:${NEW} "
+          done
+          echo "published=${PUBLISHED}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release for each published skill
+        if: steps.publish.outputs.published != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISHED: ${{ steps.publish.outputs.published }}
+        run: |
+          set -e
+          for entry in $PUBLISHED; do
+            skill="${entry%%:*}"
+            version="${entry##*:}"
+            tag="${skill}-v${version}"
+            zip="skills/${skill}/target/${skill}-${version}-bin.zip"
+            echo "::group::Release ${tag}"
+            # Build release notes from commits touching this skill since the previous tag.
+            prev_tag=$(git tag --list "${skill}-v*" --sort=-v:refname | head -n1)
+            if [ -n "$prev_tag" ]; then
+              range="${prev_tag}..HEAD"
+            else
+              range="HEAD"
+            fi
+            notes=$(git log --pretty=format:'- %s' "$range" -- "skills/${skill}/" \
+              "assembly/" "pom.xml" ".github/workflows/publish.yml" | head -50)
+            if [ -z "$notes" ]; then
+              notes="- Initial release of ${skill} ${version}"
+            fi
+            body=$(printf '## %s %s\n\nPublished to Maven Central:\n```\nio.github.randomcodespace.ai:%s:%s\n```\n\n### Changes\n%s\n' \
+              "$skill" "$version" "$skill" "$version" "$notes")
+            gh release create "$tag" \
+              --title "${skill} ${version}" \
+              --notes "$body" \
+              --target "$(git rev-parse HEAD)" \
+              ${zip:+"$zip"}
             echo "::endgroup::"
           done
 
