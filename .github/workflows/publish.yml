@@ -43,8 +43,8 @@ jobs:
           distribution: temurin
           java-version: '17'
           server-id: central
-          server-username: CENTRAL_USERNAME
-          server-password: CENTRAL_PASSWORD
+          server-username: OSS_NEXUS_USER
+          server-password: OSS_NEXUS_PASS
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PASSPHRASE
 
@@ -75,8 +75,8 @@ jobs:
       - name: Bump, build, publish
         if: steps.detect.outputs.skills != ''
         env:
-          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          OSS_NEXUS_USER: ${{ secrets.OSS_NEXUS_USER }}
+          OSS_NEXUS_PASS: ${{ secrets.OSS_NEXUS_PASS }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           SKILLS: ${{ steps.detect.outputs.skills }}
