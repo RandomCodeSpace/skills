@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
+    <id>bin</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>${project.artifactId}</outputDirectory>
+            <includes>
+                <include>SKILL.md</include>
+                <include>references/**</include>
+                <include>assets/**</include>
+                <include>scripts/**</include>
+                <include>evals/**</include>
+            </includes>
+            <excludes>
+                <exclude>pom.xml</exclude>
+                <exclude>target/**</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>

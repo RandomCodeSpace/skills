@@ -13,10 +13,10 @@
 
     <artifactId>gitlab-helper</artifactId>
     <version>0.1.1</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <name>gitlab-helper</name>
-    <description>Claude skill for GitLab CI/CD, pipelines, runners, and API automation. Grounds answers in the user's specific GitLab version and uses glab (or python-gitlab as fallback) for real automation.</description>
+    <description>Claude skill for GitLab CI/CD, pipelines, runners, and API automation. Version-aware doc grounding + glab (or python-gitlab fallback) for real automation. Distributed as a zip bundle containing SKILL.md and reference files.</description>
     <url>https://github.com/RandomCodeSpace/skills/tree/main/skills/gitlab-helper</url>
 
     <licenses>
@@ -42,4 +42,61 @@
         <url>https://github.com/RandomCodeSpace/skills/tree/main/skills/gitlab-helper</url>
         <tag>HEAD</tag>
     </scm>
+
+    <properties>
+        <!-- Override parent — this module IS published. -->
+        <central.skipPublishing>false</central.skipPublishing>
+        <maven.deploy.skip>false</maven.deploy.skip>
+    </properties>
+
+    <build>
+        <plugins>
+            <!-- Build the zip bundle from SKILL.md + references/ etc. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bundle</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <!-- appendAssemblyId=true (default) puts the assembly id
+                                 onto the filename as the classifier, producing
+                                 gitlab-helper-<version>-bin.zip. -->
+                            <descriptors>
+                                <descriptor>${project.parent.basedir}/assembly/skill-bundle.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Attach the zip so it's deployed alongside the pom. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-bundle</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>${project.build.directory}/${project.artifactId}-${project.version}-bin.zip</file>
+                                    <type>zip</type>
+                                    <classifier>bin</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
