@@ -21,6 +21,7 @@
 
     <modules>
         <module>skills/gitlab-helper</module>
+        <module>skills/gsd</module>
     </modules>
 
     <properties>
