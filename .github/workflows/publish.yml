@@ -1,28 +1,43 @@
-name: Publish to Maven Central
+name: Auto-publish changed skills
+
+# On any push to main that touches files under skills/<name>/ (excluding pom.xml),
+# detect which skills changed, bump each one's patch version, publish to Maven
+# Central via the Central Portal, then commit the version bumps back to main.
+#
+# The commit-back uses [skip ci] so it doesn't trigger another run.
+#
+# Manual override: trigger from the Actions tab with a skill name to force-publish
+# even if nothing changed.
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: 'Build + sign but do not publish'
-        type: boolean
-        default: false
+      skill:
+        description: 'Skill name to force-publish (e.g. gitlab-helper)'
+        required: false
+        type: string
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: maven-central
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
 
-      - name: Set up JDK 17
+      - name: Set up JDK 17 + GPG
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -33,27 +48,67 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PASSPHRASE
 
-      - name: Derive version from tag
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Detect changed skills
+        id: detect
         env:
-          REF_NAME: ${{ github.ref_name }}
+          FORCE_SKILL: ${{ inputs.skill }}
         run: |
-          VERSION="${REF_NAME#v}"
-          echo "Setting project version to $VERSION"
-          mvn -B versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+          set -e
+          if [ -n "${FORCE_SKILL}" ]; then
+            echo "Force-publishing: ${FORCE_SKILL}"
+            echo "skills=${FORCE_SKILL}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
+            echo "No previous commit — nothing to diff."
+            echo "skills=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'skills/' \
+            | grep -v '/pom\.xml$' \
+            | awk -F/ '/^skills\// && NF>=3 {print $2}' \
+            | sort -u \
+            | tr '\n' ' ')
+          echo "Changed skills: '${CHANGED}'"
+          echo "skills=${CHANGED}" >> "$GITHUB_OUTPUT"
 
-      - name: Build, sign, and publish
-        if: ${{ !inputs.dry_run }}
-        run: mvn -B -ntp -Prelease deploy
+      - name: Bump, build, publish
+        if: steps.detect.outputs.skills != ''
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          SKILLS: ${{ steps.detect.outputs.skills }}
+        run: |
+          set -e
+          for skill in $SKILLS; do
+            module="skills/${skill}"
+            if [ ! -f "${module}/pom.xml" ]; then
+              echo "::warning::No pom.xml for ${skill} — skipping"
+              continue
+            fi
+            CURRENT=$(mvn -q -f "${module}/pom.xml" help:evaluate \
+              -Dexpression=project.version -DforceStdout)
+            IFS=. read -r MAJ MIN PAT <<<"${CURRENT}"
+            NEW="${MAJ}.${MIN}.$((PAT + 1))"
+            echo "::group::Publishing ${skill} ${CURRENT} -> ${NEW}"
+            mvn -B -ntp -pl "${module}" versions:set \
+              -DnewVersion="${NEW}" -DgenerateBackupPoms=false
+            mvn -B -ntp -pl "${module}" -am -Prelease deploy
+            echo "::endgroup::"
+          done
 
-      - name: Dry-run build (no publish)
-        if: ${{ inputs.dry_run }}
-        run: mvn -B -ntp -Prelease verify
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Commit version bumps
+        if: steps.detect.outputs.skills != ''
+        run: |
+          set -e
+          if git diff --quiet -- 'skills/*/pom.xml'; then
+            echo "No version changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add skills/*/pom.xml
+          git commit -m "chore: bump skill patch version after publish [skip ci]"
+          git push origin HEAD:main
