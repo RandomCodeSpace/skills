@@ -164,10 +164,8 @@
                                     <goal>sign</goal>
                                 </goals>
                                 <configuration>
-                                    <gpgArguments>
-                                        <arg>--pinentry-mode</arg>
-                                        <arg>loopback</arg>
-                                    </gpgArguments>
+                                    <!-- Key has no passphrase; tell the plugin explicitly. -->
+                                    <passphrase></passphrase>
                                 </configuration>
                             </execution>
                         </executions>
