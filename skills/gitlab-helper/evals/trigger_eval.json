@@ -1,0 +1,22 @@
+[
+  {"query": "our .gitlab-ci.yml is throwing 'jobs:test config contains unknown keys: only_changes' on our self-hosted 16.4 box, i tried deleting the rules block and now nothing runs on MRs. this worked fine last week before the upgrade", "should_trigger": true},
+  {"query": "i need a pipeline that builds a python package, publishes it to our GitLab package registry, and only runs on tags matching v*. we're on gitlab.com paid tier. also dependency scanning should be on", "should_trigger": true},
+  {"query": "write me a one-liner to close every issue in group 'backend' labeled 'stale' that hasnt been updated in 90 days — we have glab installed already on this host", "should_trigger": true},
+  {"query": "whats the syntax for needs: with a parent-child pipeline in gitlab 17? trying to pass artifacts from the parent build job into a triggered downstream pipeline", "should_trigger": true},
+  {"query": "our runner keeps saying 'This job is stuck because the project doesn't have any runners online assigned to it' but the runner IS online (checked in admin area). self managed 16.11", "should_trigger": true},
+  {"query": "can you review this yaml file — we use rules:changes: on **/*.ts but the test job runs even when only the README changes. whats going on", "should_trigger": true},
+  {"query": "i want to set up merge trains on our project. we're on premium, gitlab.com. what do i need to enable and are there gotchas with our current fast-forward merge setup", "should_trigger": true},
+  {"query": "how do I get a list of all container images in our GitLab Container Registry for project 'platform/api' sorted by size, so i can figure out what to clean up. i have a PAT with api scope", "should_trigger": true},
+  {"query": "we're migrating from circleci to gitlab ci and i need to convert this config.yml — it has orbs, workflows, and a fan-out matrix over 4 python versions. what's the equivalent in gitlab-ci.yml", "should_trigger": true},
+  {"query": "my deploy:production job uses environment:production but the 'stop' button in the environments UI does nothing. i have on_stop: stop_production defined. gitlab 17.2", "should_trigger": true},
+  {"query": "github actions has reusable workflows with inputs. what's the gitlab equivalent and how do i version them so 8 teams can share one pipeline template safely", "should_trigger": true},
+  {"query": "help me rebase this branch onto main, theres a conflict in package.json where i added lodash and someone else added date-fns", "should_trigger": false},
+  {"query": "write a github actions workflow that runs pytest on 3.10, 3.11, 3.12 in a matrix and caches pip", "should_trigger": false},
+  {"query": "our jenkinsfile is 400 lines and unreadable, can you refactor it using shared libraries and drop the declarative to scripted mix we have", "should_trigger": false},
+  {"query": "i'm getting 'fatal: refusing to merge unrelated histories' when trying to pull from origin/main — this is a fresh clone i just did yesterday, what did i do wrong", "should_trigger": false},
+  {"query": "whats the difference between git fetch and git pull, i've been using pull this whole time and my coworker said i should be fetching first", "should_trigger": false},
+  {"query": "write me a bash script that finds all .py files larger than 1MB in our monorepo and prints them sorted by size", "should_trigger": false},
+  {"query": "our CI (buildkite) keeps timing out on the e2e step because playwright is downloading browsers every run, how do i cache them in a buildkite agent", "should_trigger": false},
+  {"query": "how do i use gh to list all prs in a github org that i reviewed in the last 2 weeks", "should_trigger": false},
+  {"query": "i need to lab gitlab support — they said the omnibus package installer for ubuntu 22.04 has an issue with the embedded postgres on upgrade from 16 to 17, is this a known thing and whats the workaround", "should_trigger": true}
+]

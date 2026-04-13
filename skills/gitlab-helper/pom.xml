@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.randomcodespace.ai</groupId>
+        <artifactId>skills-parent</artifactId>
+        <version>0.1.0</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>gitlab-helper</artifactId>
+    <version>0.1.0</version>
+    <packaging>jar</packaging>
+
+    <name>gitlab-helper</name>
+    <description>Claude skill for GitLab CI/CD, pipelines, runners, and API automation. Grounds answers in the user's specific GitLab version and uses glab (or python-gitlab as fallback) for real automation.</description>
+    <url>https://github.com/RandomCodeSpace/skills/tree/main/skills/gitlab-helper</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>randomcodespace</id>
+            <name>RandomCodeSpace</name>
+            <email>mail@ossrandom.com</email>
+            <organizationUrl>https://github.com/RandomCodeSpace</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/RandomCodeSpace/skills.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/RandomCodeSpace/skills.git</developerConnection>
+        <url>https://github.com/RandomCodeSpace/skills/tree/main/skills/gitlab-helper</url>
+        <tag>HEAD</tag>
+    </scm>
+</project>

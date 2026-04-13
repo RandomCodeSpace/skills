@@ -1,0 +1,26 @@
+{
+  "skill_name": "gitlab-helper",
+  "evals": [
+    {
+      "id": 0,
+      "name": "nodejs-pipeline-maintainable",
+      "prompt": "We're on self-managed GitLab 17.6 Ultimate at https://gitlab.acme-corp.internal. I need a .gitlab-ci.yml for our Node.js 20 service (monorepo root has pnpm-workspace.yaml, the service is in packages/api). Should install deps with pnpm, run eslint + vitest, build a Docker image pushed to our GitLab Container Registry, and deploy to a 'staging' environment on main. We have shared runners with docker executor tagged 'docker'. Make it maintainable — this is going to be copied across ~12 similar services by other teams.",
+      "expected_output": "A .gitlab-ci.yml that uses CI/CD components or a clean include structure, has named stages, uses default: block, rules instead of only/except, pinned image versions, interruptible jobs, and explicit guidance toward components given the version.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "pipeline-debug-image-not-found",
+      "prompt": "my gitlab pipeline keeps failing on the build stage with 'ERROR: Job failed: Error response from daemon: pull access denied for registry.acme.internal/base/python, repository does not exist or may require authorization'. we're on gitlab 16.8 self-hosted. here's my job:\n\nbuild:\n  stage: build\n  image: registry.acme.internal/base/python:3.11\n  script:\n    - pip install -r requirements.txt\n    - pytest\n\nwhats wrong and how do I fix it",
+      "expected_output": "Should identify this as a registry auth issue for a private registry, explain that GitLab needs DOCKER_AUTH_CONFIG CI variable or runner-level config, link to the version-appropriate docs, and show a concrete fix.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "automation-list-my-mrs",
+      "prompt": "I'm on gitlab.com and I want a one-liner I can run from my terminal to list all open merge requests assigned to me across every project in my group 'acme-data'. I have Go installed. What do I do?",
+      "expected_output": "Should recommend glab (because Go is available), walk through install via go install, auth, and give the actual command. Should NOT default to python-gitlab given Go is present.",
+      "files": []
+    }
+  ]
+}
