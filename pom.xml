@@ -4,133 +4,27 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Reactor aggregator only. NOT a parent for any skill, and NOT published
+         to Maven Central. Its only job is to let us build all skills from the
+         repo root with `mvn -pl skills/<name> -am ...`.
+
+         Avoiding parent/child inheritance means the central-publishing-maven-plugin
+         never stages this pom into the upload bundle. Each skill module is
+         fully self-contained. -->
+
     <groupId>io.github.randomcodespace.ai</groupId>
-    <artifactId>skills-parent</artifactId>
-    <version>0.1.0</version>
+    <artifactId>skills-aggregator</artifactId>
+    <version>0.0.0-LOCAL</version>
     <packaging>pom</packaging>
 
-    <name>RandomCodeSpace Claude Skills (parent)</name>
-    <description>Parent POM for Claude Code / Agent SDK skills published by RandomCodeSpace.</description>
-    <url>https://github.com/RandomCodeSpace/skills</url>
-    <inceptionYear>2026</inceptionYear>
-
-    <licenses>
-        <license>
-            <name>MIT License</name>
-            <url>https://opensource.org/licenses/MIT</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <id>randomcodespace</id>
-            <name>RandomCodeSpace</name>
-            <email>mail@ossrandom.com</email>
-            <organization>RandomCodeSpace</organization>
-            <organizationUrl>https://github.com/RandomCodeSpace</organizationUrl>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:git://github.com/RandomCodeSpace/skills.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/RandomCodeSpace/skills.git</developerConnection>
-        <url>https://github.com/RandomCodeSpace/skills</url>
-        <tag>HEAD</tag>
-    </scm>
-
-    <issueManagement>
-        <system>GitHub Issues</system>
-        <url>https://github.com/RandomCodeSpace/skills/issues</url>
-    </issueManagement>
+    <name>RandomCodeSpace Claude Skills (reactor)</name>
 
     <modules>
         <module>skills/gitlab-helper</module>
     </modules>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
-        <build-helper-plugin.version>3.6.0</build-helper-plugin.version>
-        <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
-        <maven-deploy-plugin.version>3.1.3</maven-deploy-plugin.version>
-        <central-publishing-plugin.version>0.6.0</central-publishing-plugin.version>
-
-        <!-- Parent is a build aggregator; never upload it to Central.
-             Each skill module overrides this to false. -->
-        <central.skipPublishing>true</central.skipPublishing>
         <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.install.skip>true</maven.install.skip>
     </properties>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${maven-assembly-plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>${build-helper-plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${maven-deploy-plugin.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
-
-    <profiles>
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven-gpg-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                                <configuration>
-                                    <!-- Key has no passphrase; empty element is required
-                                         so the plugin doesn't prompt. -->
-                                    <passphrase></passphrase>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.sonatype.central</groupId>
-                        <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>${central-publishing-plugin.version}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <publishingServerId>central</publishingServerId>
-                            <autoPublish>true</autoPublish>
-                            <waitUntil>published</waitUntil>
-                            <skipPublishing>${central.skipPublishing}</skipPublishing>
-                            <!-- The parent pom is a build aggregator only; never
-                                 upload it to Central. (skipPublishing alone isn't
-                                 enough because extensions=true stages every reactor
-                                 pom before per-project skip is checked.) -->
-                            <excludeArtifacts>
-                                <artifact>io.github.randomcodespace.ai:skills-parent</artifact>
-                            </excludeArtifacts>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

@@ -4,20 +4,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>io.github.randomcodespace.ai</groupId>
-        <artifactId>skills-parent</artifactId>
-        <version>0.1.0</version>
-        <relativePath>../../pom.xml</relativePath>
-    </parent>
+    <!-- No <parent> — each skill module is a self-contained artifact so the
+         central-publishing-maven-plugin never tries to re-upload a shared
+         parent pom. Copy this file when adding a new skill and change only
+         artifactId / version / name / description / scm url. -->
 
+    <groupId>io.github.randomcodespace.ai</groupId>
     <artifactId>gitlab-helper</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <packaging>pom</packaging>
 
     <name>gitlab-helper</name>
     <description>Claude skill for GitLab CI/CD, pipelines, runners, and API automation. Version-aware doc grounding + glab (or python-gitlab fallback) for real automation. Distributed as a zip bundle containing SKILL.md and reference files.</description>
     <url>https://github.com/RandomCodeSpace/skills/tree/main/skills/gitlab-helper</url>
+    <inceptionYear>2026</inceptionYear>
 
     <licenses>
         <license>
@@ -32,6 +32,7 @@
             <id>randomcodespace</id>
             <name>RandomCodeSpace</name>
             <email>mail@ossrandom.com</email>
+            <organization>RandomCodeSpace</organization>
             <organizationUrl>https://github.com/RandomCodeSpace</organizationUrl>
         </developer>
     </developers>
@@ -43,18 +44,21 @@
         <tag>HEAD</tag>
     </scm>
 
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/RandomCodeSpace/skills/issues</url>
+    </issueManagement>
+
     <properties>
-        <!-- Override parent — this module IS published. -->
-        <central.skipPublishing>false</central.skipPublishing>
-        <maven.deploy.skip>false</maven.deploy.skip>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>
         <plugins>
-            <!-- Build the zip bundle from SKILL.md + references/ etc. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
                 <executions>
                     <execution>
                         <id>bundle</id>
@@ -63,21 +67,18 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
-                            <!-- appendAssemblyId=true (default) puts the assembly id
-                                 onto the filename as the classifier, producing
-                                 gitlab-helper-<version>-bin.zip. -->
                             <descriptors>
-                                <descriptor>${project.parent.basedir}/assembly/skill-bundle.xml</descriptor>
+                                <descriptor>${session.executionRootDirectory}/assembly/skill-bundle.xml</descriptor>
                             </descriptors>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- Attach the zip so it's deployed alongside the pom. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <id>attach-bundle</id>
@@ -99,4 +100,43 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <passphrase></passphrase>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.6.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
