@@ -125,10 +125,7 @@
                                  enough because extensions=true stages every reactor
                                  pom before per-project skip is checked.) -->
                             <excludeArtifacts>
-                                <artifact>
-                                    <groupId>io.github.randomcodespace.ai</groupId>
-                                    <artifactId>skills-parent</artifactId>
-                                </artifact>
+                                <artifact>io.github.randomcodespace.ai:skills-parent</artifact>
                             </excludeArtifacts>
                         </configuration>
                     </plugin>
