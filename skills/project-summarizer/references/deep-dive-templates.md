@@ -89,7 +89,12 @@ Make it unambiguous which file defines the schema (the migration vs. the ORM mod
 
 ## `docs/project/ui.md`
 
-Write this when there's a frontend (web, mobile, desktop GUI).
+Write this when there's a frontend (web, mobile, desktop GUI) **or** when the project is itself a UI library / design system.
+
+This template covers two modes — most sections apply to both, but a few are mode-specific:
+
+- **App mode** (the project ships an app users interact with): all sections apply.
+- **Library mode** (the project ships UI components other apps depend on): **skip** the *Routing*, *Data fetching*, and *Forms & validation* sections — libraries don't route, fetch, or own forms. **Expand** the *Component organization*, *Design system*, and *Bundling / publish* sections instead.
 
 ```markdown
 # UI
@@ -139,6 +144,19 @@ If forms are a major surface, name the library (react-hook-form, formik, vee-val
 ## Performance notes
 
 Anything an agent should know before touching the UI: virtualization on long lists, image optimization, code-splitting boundaries, hydration gotchas (SSR/SSG), bundle-size budgets.
+
+## (Library mode only) Bundling & publish
+
+- Output formats: ESM / CJS / UMD / types-only.
+- Peer-dep model: which framework versions (React/Vue/Solid/Svelte) are supported.
+- CSS distribution: single sheet, per-component, or none (consumer's responsibility).
+- Tree-shaking story: are sub-imports stable (`import { Button } from 'foo/Button'`)?
+- Demo / preview surface: Storybook, kit pages, README playground.
+- Publish targets and tag/version-sync gates (call out anything that *blocks* publish on mismatch — e.g. CI refusing to publish if `package.json` version != git tag).
+
+## (Library mode only) Known gaps
+
+If the library has weak test coverage, missing prop types, peer-dep version skew vs. the wider ecosystem, missing Storybook entries, or known-broken consumers — surface each explicitly. An agent making "UI improvements" needs to know what's *already* broken before touching anything; otherwise they'll attribute pre-existing breakage to their own change.
 ```
 
 ## `docs/project/flows.md`
@@ -219,9 +237,17 @@ Example:
 > 3. Add request/response types in `internal/api/<resource>/types.go`
 > 4. Add integration test in `internal/api/<resource>/handler_test.go`
 
-## Things to avoid
+## Things to avoid (anti-patterns)
 
 Patterns that *look* idiomatic but aren't, given this codebase's history. Example: "Don't introduce new dependencies on `<deprecated package>` — it's being removed; use `<replacement>`."
+
+## Don't refactor (intentional non-standard choices)
+
+Patterns that look unusual but are deliberate. Each entry: what it is, why it exists, and where to verify. Example:
+
+> **Single `types.ts` for all components** — types live in `src/types.ts` rather than colocated with each component. This is intentional; do not split. Rationale: keeps the public type surface in one diff-friendly file. See commit `<sha>` / discussion `<link>` if available.
+
+The point of this section is to prevent well-meaning "cleanups" from breaking the maintainer's working model. If you suspect a non-standard choice but can't find rationale, still record it here with an honest "rationale unknown — confirm with maintainer before refactoring".
 ```
 
 ## `docs/project/integrations.md`
@@ -291,5 +317,14 @@ How does the user iterate? Hot reload? Watch mode? Multi-process (api + worker +
 
 ## Gotchas
 
-Build-time things that bite: native deps, codegen steps, env vars required even for `make build`, platform-specific quirks.
+Build-time things that bite. For each that applies, be explicit — these are high-cost to miss:
+
+- **Required build tags or feature flags** (e.g. Go `-tags sqlite_fts5`, Rust `--features foo`, Vite mode flags). Missing tags often produce silent miscompiles or runtime panics on first request.
+- **Codegen steps not visible in the headline build command** (e.g. `go generate ./...`, `protoc`, `prisma generate`, `swagger-codegen`, `sqlc generate`). Note when they're auto-run vs. manual.
+- **Embed paths and `//go:embed` constraints** — some embed directives can't reach parent directories, forcing rsync-into-package dances. If the project does this, document the dance.
+- **Native deps** that must be pre-installed (`libpq-dev`, `libssl-dev`, `protoc`, `pkg-config`). List them.
+- **Env vars required even for `make build`** (e.g. `CGO_ENABLED=1`, `GOOS=linux`, custom registry tokens for vendored deps).
+- **Platform-specific quirks** — Windows-only PowerShell helpers, Linux-only `/proc` parsing, macOS code-signing, Apple Silicon vs. Intel build differences.
+- **First-build oddities** — anything that breaks on a clean clone but works after one full build (e.g. needs a generated file that another step produces).
+- **Frontend asset → backend embed pipelines** — common in single-binary apps with embedded SPAs. Document the order: build frontend → copy/rsync into a Go-readable path → `go build`.
 ```

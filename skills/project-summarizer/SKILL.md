@@ -22,15 +22,15 @@ Optimize relentlessly for that reader. Every claim should be checkable against a
 
 **Only when warranted:** deep-dive files under `docs/project/`. Don't create a file if there's nothing meaningful to put in it; empty/skeletal files are noise that costs the next agent context budget for no payoff.
 
-| File | Create when |
-|------|-------------|
-| `docs/project/architecture.md` | Multi-component system, non-trivial layering, or anything beyond a single binary/script |
-| `docs/project/data-model.md` | Has a database, ORM, schema files, or domain entities worth tracing |
-| `docs/project/ui.md` | Has a frontend (web framework, mobile, desktop GUI) |
-| `docs/project/flows.md` | Has 1+ key user/system journeys worth tracing through code |
-| `docs/project/conventions.md` | Patterns/conventions an agent must follow when modifying — and there's enough of them that a full file is justified |
-| `docs/project/integrations.md` | Calls external APIs, queues, message brokers, third-party services |
-| `docs/project/build-and-run.md` | Build is non-trivial: multi-step, env-dependent, multiple targets, or has gotchas |
+| File | Create when | Skip when |
+|------|-------------|-----------|
+| `docs/project/architecture.md` | Multi-component system, non-trivial layering, or anything beyond a single binary/script | Single-file or single-package project where the dir map already conveys the structure |
+| `docs/project/data-model.md` | Database, ORM, schema files, or domain entities worth tracing | No persistent state, or only flat config files |
+| `docs/project/ui.md` | Frontend app **or** the project is itself a UI library / design system | No UI surface at all (CLI, backend lib with no UI concerns) |
+| `docs/project/flows.md` | 1+ key user/system journeys that cross multiple files | Single dispatch path; library with function calls but no flows |
+| `docs/project/conventions.md` | Conventions overflow PROJECT_SUMMARY's top-level list, **or** there's an "Adding a new X" recipe worth its own section | 3–5 simple rules that fit comfortably in PROJECT_SUMMARY.md |
+| `docs/project/integrations.md` | Calls external APIs, queues, message brokers, third-party services | Project only `os/exec`s local binaries / no runtime external dependencies |
+| `docs/project/build-and-run.md` | Build is non-trivial: multi-step, build tags, codegen, embed paths, multiple targets | Single command (`go build`, `npm run build`, `cargo build`) with no surprises |
 
 The top-level `PROJECT_SUMMARY.md` always lists the deep-dives that exist (and only those), so the next agent knows where to look next without guessing.
 
@@ -64,7 +64,7 @@ Read in this order; stop reading once you have what you need. **Do not read ever
 4. **Top-level directory map** — `ls` the root and one or two levels into the main source folders. You need the shape, not every leaf.
 5. **Entry points** — `main.*`, `cmd/*/main.go`, `src/index.*`, `app.py`, `manage.py`, `server.*`, framework-specific entrypoints, `[bin]` in `Cargo.toml`, `"bin"` in `package.json`.
 6. **Schemas** — migration files, ORM models, `schema.sql`, OpenAPI/GraphQL/protobuf definitions.
-7. **Existing docs** — `docs/`, `ADR/`, `RFC/`. Cite or summarize; don't duplicate.
+7. **Existing docs** — `docs/`, `ADR/`, `RFC/`, in-repo design specs (e.g. `docs/superpowers/`, `docs/v02/`). Link from the relevant deep-dive — don't restate their content. These often answer "why" questions you'd otherwise speculate about.
 
 Use `Glob` and `Read` (or `ctx_batch_execute` for multi-command surveys) — favor parallel commands for speed. **Use a subagent (`Explore` / general-purpose) when the survey would otherwise dump >5k lines into your context.**
 
@@ -88,24 +88,28 @@ Empty or skeletal deep-dives are an anti-pattern: they cost the next agent a too
 
 ### Step 5 — Write the docs
 
-Use the top-level template below. For deep-dives, read `references/deep-dive-templates.md` on demand — only when you've decided to write that specific file.
+Use the top-level template below. For deep-dives, read `references/deep-dive-templates.md` on demand — only when you've decided to write that specific file. (If the project warrants 4+ deep-dives, just load the file once — the per-template loading discipline is for small projects, not for ones that need most of the templates.)
 
 Apply these rules across **every** file you produce:
 
 - **Cite paths.** Every concrete claim should reference a file (`src/auth/jwt.ts`) or directory. Where line-level matters, use `file.ext:42`.
 - **Quote the actual command.** Don't write "run the tests" — write the exact command from `package.json` / `Makefile` / CI. If you didn't verify it works, say so explicitly.
-- **Mark uncertainty.** If you inferred something without reading the file, label it `[inferred]`. The next agent must be able to tell verified facts from educated guesses; if you blur that line you've poisoned its context.
+- **Three verification states.** (1) *Verified*: read directly — claim freely. (2) *Sampled*: read part of a large file — cite the read range, e.g. "sampled `server.go:1–200`". (3) *Inferred*: not directly verified — tag `[inferred]`. Reserve `[inferred]` for the third case. *Absence* claims (no CI, no tests, no release automation) are verified by a listing command — note the command, don't tag `[inferred]`.
 - **No marketing.** "A blazing-fast, modern foo" — cut. "A Rust HTTP server using axum 0.7, single binary, ~30k LOC" — keep.
 - **Concrete over abstract.** "Uses repository pattern" alone is weak. "Repository pattern: each domain entity has a `*Repository` struct in `internal/<entity>/repo.go` exposing `Find/Save/Delete` that take a `context.Context`" is useful.
 - **Don't paste what's cheap to re-read.** Don't dump `package.json` into the doc — point to it. Do capture *non-obvious* things that aren't easy to find via grep (gotchas, implicit conventions, env quirks).
 - **Be honest about what you didn't read.** A gap acknowledged is far better than a fabricated section.
+- **Distinguish "docs about this project" from "content this project ships".** A repo that is itself a Claude skill, plugin, or template will contain a `SKILL.md`, `AGENTS.md`, or similar — that's *content for the project's consumers*, not metadata about the project itself. Check the file's frontmatter / shape and treat it as content unless it clearly describes the repo. The same applies to `examples/`, `templates/`, and demo apps.
+- **High-value gotchas may legitimately appear in multiple places.** A build-tag requirement (e.g. `-tags sqlite_fts5`) belongs in PROJECT_SUMMARY's Gotchas, in `build-and-run.md`'s Gotchas, and possibly in `conventions.md`'s "Things to avoid". Don't fear one-line cross-references when the cost of missing the rule is high — surface it where the relevant agent will look.
+- **Surface "don't refactor" rules.** If the project makes a non-standard organizational choice on purpose (single types file, hand-rolled dispatcher, flat package layout), call it out so the next agent doesn't "fix" it. Canonical home: `conventions.md` "Don't refactor" section, or PROJECT_SUMMARY "Things to avoid" if there's no full conventions file.
 
 ### Step 6 — Verify before declaring done
 
 - Skim `PROJECT_SUMMARY.md` end-to-end as if you were a fresh agent. Could you actually start working from this?
-- Every command listed: confirm it appears in the source you claim it came from.
+- Every command listed: confirm it appears in the source you claim it came from. (Exception: for very large hand-rolled route tables / dispatcher files, exhaustive verification isn't practical — sample a few and mark the unread surface `[inferred]`.)
 - Every deep-dive linked from `PROJECT_SUMMARY.md`: confirm the file exists and has substance.
-- Tell the user what you wrote, what you intentionally skipped (and why), and any uncategorized gotchas you spotted.
+- Gotchas have a home. Canonical homes are: PROJECT_SUMMARY's `Gotchas`, `conventions.md`'s "Things to avoid" / "Don't refactor", and `build-and-run.md`'s `Gotchas`. If a gotcha doesn't fit any of those, surface it in your hand-off message rather than burying it in unrelated prose.
+- Tell the user what you wrote, what you intentionally skipped (and why), and any uncategorized findings.
 
 ## Top-level template — `PROJECT_SUMMARY.md`
 
@@ -118,7 +122,7 @@ Apply these rules across **every** file you produce:
 
 - **What it is:** <1–2 sentence description of purpose, in plain language>
 - **Type:** <CLI tool | library | web service | web app | mobile app | desktop app | monorepo | infra | data pipeline | other>
-- **Status:** <e.g. "active — last commit 3 days ago" or "archived" — `[inferred]` if from heuristics>
+- **Status:** one of `active` (recent non-checkpoint commits), `maintained` (sporadic but real activity), `archived`, or `pre-release / freshly bootstrapped` (0–1 commits, or only "checkpoint" commits — don't guess maturity from this). Cite the signal you used (e.g. "5 commits in last 7 days" or "no commits since 2024").
 - **Primary language(s):** <e.g. Go 1.22, TypeScript 5.4>
 
 ## Tech stack
