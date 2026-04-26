@@ -1,0 +1,26 @@
+{
+  "skill_name": "project-summarizer",
+  "evals": [
+    {
+      "id": "gotk",
+      "prompt": "I just cloned this repo at ~/projects/gotk, can you summarize it so a future AI session has full context to make changes?",
+      "project_path": "/home/dev/projects/gotk",
+      "expected_output": "PROJECT_SUMMARY.md grounded in actual go files; small project so deep-dives optional",
+      "files": []
+    },
+    {
+      "id": "design-system",
+      "prompt": "Help me understand this codebase at ~/projects/design-system — I want to onboard another AI agent to make UI improvements.",
+      "project_path": "/home/dev/projects/design-system",
+      "expected_output": "PROJECT_SUMMARY.md + ui.md deep-dive; should detect TypeScript/UI library nature",
+      "files": []
+    },
+    {
+      "id": "ctm",
+      "prompt": "Generate project context for ~/projects/ctm so an agent can modify it later. It has a Go backend and a UI folder.",
+      "project_path": "/home/dev/projects/ctm",
+      "expected_output": "PROJECT_SUMMARY.md + likely architecture.md + ui.md + build-and-run.md; multi-component project",
+      "files": []
+    }
+  ]
+}

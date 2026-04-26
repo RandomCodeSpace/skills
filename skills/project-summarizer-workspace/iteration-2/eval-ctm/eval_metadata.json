@@ -1,0 +1,7 @@
+{
+  "eval_id": "ctm",
+  "eval_name": "go-service-with-ui",
+  "prompt": "Generate project context for ~/projects/ctm so an agent can modify it later. It has a Go backend and a UI folder.",
+  "project_path": "/home/dev/projects/ctm",
+  "assertions": []
+}
