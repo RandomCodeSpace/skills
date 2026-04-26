@@ -1,0 +1,7 @@
+{
+  "eval_id": "gotk",
+  "eval_name": "small-go-cli",
+  "prompt": "I just cloned this repo at ~/projects/gotk, can you summarize it so a future AI session has full context to make changes?",
+  "project_path": "/home/dev/projects/gotk",
+  "assertions": []
+}

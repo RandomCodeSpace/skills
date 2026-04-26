@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "project-summarizer", "runs": [{"id": "eval-ctm-with_skill", "prompt": "Generate project context for ~/projects/ctm so an agent can modify it later. It has a Go backend and a UI folder.", "eval_id": "ctm", "outputs": [{"name": "PROJECT_SUMMARY.md", "type": "text", "content": "# Project Summary: ctm\n\n> Generated by `project-summarizer` on 2026-04-26. Audience: AI agents (and humans) who need to understand and modify this codebase. Every claim should be checkable; items marked `[inferred]` were not directly verified.\n\n## Identity\n\n- **What it is:** Claude Tmux Manager \u2014 a Go CLI that wraps `claude` (Anthropic's Claude Code CLI) inside named tmux sessions so they survive SSH drops, plus an embedded `ctm serve` HTTP daemon (port 37778) that powers a React/Vite web UI for monitoring and steering those sessions from a phone.\n- **Type:** Hybrid \u2014 primarily a Go CLI tool that also ships a single-user web app (Go HTTP server + embedded React SPA). Single binary, no external services.\n- **Status:** Active \u2014 last commit 2026-04-26 (`README.md`, `cmd serve.go`, `internal/serve/server.go` all touched today). Module path `github.com/RandomCodeSpace/ctm`. Latest released format is `v0.1.0` style tags (see release workflow). Pre-1.0.\n- **Primary language(s):** Go 1.25.0 (`go.mod:3`), TypeScript 5.6 / React 19 (`ui/package.json`).\n\n## Tech stack\n\n- **CLI framework:** `github.com/spf13/cobra` v1.10.2 (`go.mod:7`). Root command + ~30 subcommands wired in `cmd/`.\n- **Storage:**\n  - Plain JSON files under `~/.config/ctm/` for state \u2014 `config.json`, `sessions.json`, `user.json` (atomic writes via tmpfile + rename, advisory `flock`, `schema_version` + startup migrations). Paths in `internal/config/config.go:215-250`.\n  - **SQLite** (`mattn/go-sqlite3` v1.14.42, `go.mod:9`) for the cost-history store at `~/.config/ctm/ctm.db` (`internal/serve/server.go` \u2014 `store.OpenCostStore`). Requires the `sqlite_fts5` build tag (FTS5 used for log search; absence panics at boot \u2014 see Gotchas).\n- **HTTP server:** stdlib `net/http`, plus `github.com/fsnotify/fsnotify` v1.7.0 for log/state file watching, `github.com/chzyer/readline` v1.5.1 for the prompt UI, `golang.org/x/crypto` v0.50.0 (likely Argon2 for `internal/serve/auth/password.go` \u2014 `[inferred]`).\n- **UI framework:** React 19.2 + `react-router` 7 (`ui/package.json`). Build with Vite 7 + `@tailwindcss/vite` 4. Server state via `@tanstack/react-query` 5.99. shadcn-style primitives in `ui/src/components/ui/` (config in `ui/components.json`). SSE via `@microsoft/fetch-event-source` 2.0.\n- **Build system:** GNU `make` (`Makefile`, ~70 lines) orchestrates `pnpm` UI build \u2192 `rsync` \u2192 Go build with `-tags sqlite_fts5`. UI bundle is then `//go:embed`-ed into the Go binary (`internal/serve/dist/`, see `internal/serve/assets.go`).\n- **Test framework(s):** `go test` (with `-race` on serve subtree); `vitest` 3.2 for UI unit (`ui/vitest.config.ts`); `@playwright/test` 1.59 for UI E2E against a `vite preview` build with mocked `/api` + `/events` (`ui/playwright.config.ts`); root `integration_test.go` gated by `//go:build integration`.\n- **Manifest files read:** `go.mod`, `go.sum`, `Makefile`, `ui/package.json`, `ui/tsconfig*.json`, `ui/vite.config.ts`, `ui/vitest.config.ts`, `ui/playwright.config.ts`, `.github/workflows/release.yml`.\n\n## Entry points\n\n| Entrypoint | File | Purpose |\n|------------|------|---------|\n| CLI binary | `main.go` | Two-line shim: `cmd.Execute()` |\n| Cobra root | `cmd/root.go` | Defines `rootCmd`, `--verbose` / `--log-level`; configures slog before any subcommand runs |\n| Default action (attach) | `cmd/attach.go` | `runAttach` is set as `rootCmd.RunE` in `init()`; this is what `ctm` (no args) does |\n| HTTP daemon | `cmd/serve.go` \u2192 `internal/serve/server.go` | `ctm serve` starts the loopback HTTP daemon on `127.0.0.1:37778` |\n| UI app | `ui/src/main.tsx` \u2192 `ui/src/App.tsx` | React SPA root; mounts `<RouterProvider>` after `ThemeProvider`/`AuthProvider`/`SseProvider`/`AuthGate` |\n| Statusline | `cmd/statusline.go` | Invoked by Claude Code's statusline hook to render the prompt line |\n| Log-tool-use hook | `cmd/log_tool_use.go` | Invoked by Claude Code's `PostToolUse` hook (registered via the overlay) to write JSONL tool-use logs |\n| Integration tests | `integration_test.go` | Build-tagged `integration`; spawns the compiled `./ctm` binary |\n\n## Directory map\n\n```\nctm/\n\u251c\u2500\u2500 main.go                      \u2014 2-line entrypoint (calls cmd.Execute)\n\u251c\u2500\u2500 go.mod / go.sum              \u2014 module github.com/RandomCodeSpace/ctm, Go 1.25\n\u251c\u2500\u2500 Makefile                     \u2014 ui / build / dev / e2e / regression / clean\n\u251c\u2500\u2500 README.md                    \u2014 user-facing docs (Quickstart, Commands, Config)\n\u251c\u2500\u2500 integration_test.go          \u2014 //go:build integration; spawns ./ctm\n\u251c\u2500\u2500 cmd/                         \u2014 Cobra subcommands; one file per command\n\u2502   \u251c\u2500\u2500 root.go, attach.go, serve.go, new.go, kill.go, yolo.go, \u2026\n\u2502   \u251c\u2500\u2500 log_tool_use.go          \u2014 PostToolUse hook target (writes JSONL)\n\u2502   \u251c\u2500\u2500 statusline.go            \u2014 claude statusline hook target\n\u2502   \u251c\u2500\u2500 hooks_dispatch.go        \u2014 fireHook / fireServeEvent helpers\n\u2502   \u2514\u2500\u2500 *_test.go                \u2014 colocated unit tests\n\u251c\u2500\u2500 internal/                    \u2014 non-public Go packages\n\u2502   \u251c\u2500\u2500 config/                  \u2014 config.json + sessions paths, schema_version, AttentionThresholds\n\u2502   \u251c\u2500\u2500 session/                 \u2014 Session struct + JSON store (sessions.json)\n\u2502   \u251c\u2500\u2500 tmux/                    \u2014 tmux client (subprocess wrapper) + tmux.conf builder\n\u2502   \u251c\u2500\u2500 claude/                  \u2014 claude CLI invocation, /proc child detection (Linux-only), TUI\n\u2502   \u251c\u2500\u2500 health/                  \u2014 preflight checker (env, PATH, workdir, claude, tmux)\n\u2502   \u251c\u2500\u2500 doctor/                  \u2014 verbose env/state diagnostics\n\u2502   \u251c\u2500\u2500 hooks/                   \u2014 user-configurable lifecycle hook runner (on_attach, on_yolo, on_kill, \u2026)\n\u2502   \u251c\u2500\u2500 logging/                 \u2014 slog setup (text|json, level, stderr)\n\u2502   \u251c\u2500\u2500 logrotate/               \u2014 JSONL log size/age/count rotation with .gz\n\u2502   \u251c\u2500\u2500 jsonstrict/              \u2014 DisallowUnknownFields wrapper\n\u2502   \u251c\u2500\u2500 migrate/                 \u2014 schema_version migration runner for state files\n\u2502   \u251c\u2500\u2500 shell/, output/, prompt/ \u2014 shell quoting, stdout printer, readline prompt\n\u2502   \u2514\u2500\u2500 serve/                   \u2014 the ctm serve HTTP daemon\n\u2502       \u251c\u2500\u2500 server.go            \u2014 Server struct, New(), Run(), routes wiring (~33KB)\n\u2502       \u251c\u2500\u2500 assets.go            \u2014 //go:embed of UI dist; SPA fallback excludes /api + /events\n\u2502       \u251c\u2500\u2500 pane_ready.go        \u2014 tmux pane readiness probe\n\u2502       \u251c\u2500\u2500 dist/                \u2014 embedded UI bundle (rsync target from ui/dist)\n\u2502       \u251c\u2500\u2500 api/                 \u2014 REST handlers, one file per resource\n\u2502       \u2502   \u251c\u2500\u2500 auth.go, sessions.go, create.go, input.go, pane.go,\n\u2502       \u2502   \u251c\u2500\u2500 checkpoints.go, diff.go, revert.go,\n\u2502       \u2502   \u251c\u2500\u2500 doctor.go, health.go, hooks.go, bootstrap.go,\n\u2502       \u2502   \u251c\u2500\u2500 feed.go, feed_history.go, cost.go, quota.go,\n\u2502       \u2502   \u251c\u2500\u2500 subagents.go, teams.go, tool_call_detail.go,\n\u2502       \u2502   \u251c\u2500\u2500 logs_usage.go, mutations.go, origin.go,\n\u2502       \u2502   \u2514\u2500\u2500 config_get.go / config_update.go\n\u2502       \u251c\u2500\u2500 auth/                \u2014 single-user store, password (Argon2 [inferred]), middleware, rate limit\n\u2502       \u251c\u2500\u2500 attention/           \u2014 Engine + Thresholds (idle / quota / context / error-rate / yolo-unchecked)\n\u2502       \u251c\u2500\u2500 events/              \u2014 Hub (in-memory pub/sub) + SSE handler\n\u2502       \u251c\u2500\u2500 git/                 \u2014 git checkpoint / diff / revert per workdir\n\u2502       \u251c\u2500\u2500 ingest/              \u2014 Projection (sessions.json watcher), TailerManager (JSONL log tailers), QuotaIngester (statusline dumps), subagent + sessions_proj\n\u2502       \u251c\u2500\u2500 proc/                \u2014 EnsureServeRunning (best-effort spawn), PostEvent (POST /api/hooks/:event)\n\u2502       \u251c\u2500\u2500 store/               \u2014 SQLite cost_store + search_store + tool_call_subscriber\n\u2502       \u2514\u2500\u2500 webhook/             \u2014 outbound webhook dispatcher (configurable URL + auth header)\n\u251c\u2500\u2500 ui/                          \u2014 React SPA (pnpm-managed)\n\u2502   \u251c\u2500\u2500 package.json             \u2014 pnpm@10.33.0; React 19, Vite 7, Tailwind 4, vitest, playwright\n\u2502   \u251c\u2500\u2500 vite.config.ts           \u2014 @ \u2192 src alias; dev proxy /api,/events,/health* \u2192 127.0.0.1:37778\n\u2502   \u251c\u2500\u2500 tsconfig.json + .app + .node \u2014 strict, project references\n\u2502   \u251c\u2500\u2500 playwright.config.ts     \u2014 testDir ./e2e, baseURL 127.0.0.1:4173 (vite preview)\n\u2502   \u251c\u2500\u2500 vitest.config.ts         \u2014 jsdom; ui/src/test-setup.ts\n\u2502   \u251c\u2500\u2500 components.json          \u2014 shadcn config\n\u2502   \u251c\u2500\u2500 public/, index.html\n\u2502   \u251c\u2500\u2500 e2e/, e2e/fixtures/      \u2014 Playwright specs + fixtures\n\u2502   \u251c\u2500\u2500 dist/                    \u2014 built bundle (rsynced into internal/serve/dist/)\n\u2502   \u2514\u2500\u2500 src/\n\u2502       \u251c\u2500\u2500 main.tsx, App.tsx, test-setup.ts\n\u2502       \u251c\u2500\u2500 lib/                 \u2014 api.ts, ansi.ts, diff.ts, format.ts, quota.ts, sparkline.ts, tools.ts, utils.ts\n\u2502       \u251c\u2500\u2500 components/          \u2014 feature components + components/ui/ shadcn primitives\n\u2502       \u251c\u2500\u2500 hooks/               \u2014 useSessions, useFeed, useEventStream, usePaneStream, useAuthStatus, useTheme, useHotkey, useCost, useQuota, \u2026 (1 hook per API/concept)\n\u2502       \u2514\u2500\u2500 routes/              \u2014 Dashboard, SessionDetail, FeedFullscreen, DoctorPanel, AuthGate, LoginForm, SignupForm\n\u251c\u2500\u2500 docs/\n\u2502   \u251c\u2500\u2500 v02/                     \u2014 V3, V7, V19, V23 spec slices (search, sparkline, stale badge, mutation auth)\n\u2502   \u251c\u2500\u2500 superpowers/             \u2014 older spec/plan markdown (V25, V26, V27, ctm-serve-ui v0.1)\n\u2502   \u2514\u2500\u2500 robustness-audit.md      \u2014 2026-04-18 audit; useful gap inventory\n\u251c\u2500\u2500 .github/workflows/release.yml \u2014 push-to-main + workflow_dispatch; cuts tag, builds linux/darwin \u00d7 amd64/arm64, uploads\n\u251c\u2500\u2500 .superpowers/                \u2014 ephemeral runtime state for the superpowers plugin (server.pid, brainstorm state) \u2014 not source\n\u2514\u2500\u2500 .claude/                     \u2014 local Claude Code worktrees (`.claude/worktrees/agent-*`) \u2014 generated, ignore\n```\n\nSkip when reading: `ui/node_modules/`, `ui/dist/`, `internal/serve/dist/` (generated), `.superpowers/`, `.claude/worktrees/`.\n\n## Run, build, test\n\nCommands taken from `Makefile`, `ui/package.json`, and `.github/workflows/release.yml`.\n\n```bash\n# install Go deps (vendor) \u2014 go.mod managed; first build will fetch\ngo mod download\n\n# install UI deps (frozen lockfile)\ncd ui && pnpm install --frozen-lockfile\n\n# run locally (two-process dev loop)\nmake dev\n# = pnpm --prefix ui dev (Vite on :5173, proxies to :37778)\n# + go run -tags sqlite_fts5 . serve   [inferred \u2014 Makefile prints this; run target not shown but help text says so]\n# Ctrl-C tears down both via SIGINT trap (Makefile comment).\n\n# build everything (UI bundle \u2192 embed \u2192 Go binary)\nmake build\n# = make ui (pnpm build + rsync ui/dist \u2192 internal/serve/dist)\n# + go build -trimpath -tags sqlite_fts5 ./...\n\n# go tests only\ngo test -tags sqlite_fts5 ./...\n\n# UI unit tests\npnpm --prefix ui test                   # vitest run --passWithNoTests\n\n# UI typecheck\npnpm --prefix ui exec tsc --noEmit\n\n# UI E2E (Playwright; one-time prep below)\npnpm --prefix ui exec playwright install chromium\nmake e2e\n\n# Full pre-merge regression pack (Makefile:regression)\nmake regression\n# = go build + go test + go test -race ./internal/serve/...\n# + govulncheck ./... + tsc --noEmit + vitest + pnpm audit --audit-level=high\n# + make e2e\n# Wall time on author's machine: ~60-90s.\n\n# Integration tests (build-tagged)\ngo test -tags 'integration sqlite_fts5' .   # [inferred build tag combo]\n```\n\n**Required env / external services:**\n\n- **`tmux` 3.0+** on `$PATH` \u2014 hard requirement (`README.md` Requirements; `internal/tmux/`).\n- **`claude` CLI** on `$PATH` \u2014 hard requirement; spawned as a child (`internal/claude/command.go`, `internal/health/claude_check.go`).\n- **Go 1.25+** for source builds (`go.mod:3`, `README.md` Requirements). Prebuilt binaries do not need it.\n- **`pnpm` 10.33.0** for UI builds (`ui/package.json: packageManager`).\n- Loopback **port 37778** for `ctm serve` (`internal/config/config.go:DefaultServePort`, `internal/serve/server.go:DefaultPort`).\n- **`CTM_LOG_FORMAT`** (optional) \u2014 `text` (default) or `json`; read in `internal/logging/logging.go`.\n- **No public-internet calls at runtime.** Outbound webhook is opt-in (`config.json` \u2192 `serve.webhook_url`).\n- **Linux or macOS only.** Windows is not a target (POSIX flock + `/proc` parsing in `internal/claude/process.go`; release workflow comments confirm).\n\n## Conventions an agent must respect\n\nThe top set; full list in `docs/project/conventions.md`.\n\n- **One file per Cobra subcommand** under `cmd/`, with `init()` calling `rootCmd.AddCommand(...)` (e.g. `cmd/serve.go:18`). Tests are colocated as `*_test.go`. Match this layout when adding a command.\n- **All Go builds, tests, and `go install` invocations require `-tags sqlite_fts5`.** Without it, anything that opens an FTS5 table (V19 search) panics with `no such module: fts5` at boot (`Makefile` header comment).\n- **State files are JSON with `schema_version` + atomic writes.** Use the helpers in `internal/jsonstrict` (DisallowUnknownFields) and `internal/migrate` (startup migrations + `.bak.<unix-nano>` snapshots). Never write directly with `json.Encoder`. Reference: `internal/config/config.go`, `README.md` \"State file versioning\".\n- **CLI lifecycle events fan out twice** via `cmd/hooks_dispatch.go`: `fireHook(event, sess)` runs user shell hooks from `config.Hooks[event]`; `fireServeEvent(event, sess)` POSTs to the local daemon's `/api/hooks/:event`. Both are best-effort (failures swallowed). Add both calls when adding a new lifecycle moment. Known events: `on_new`, `on_attach`, `on_kill`, `on_yolo`, `on_safe`; daemon-side: `session_new`, `session_attached`, `session_killed`, `on_yolo`.\n- **Diagnostics go to stderr (slog), user output to stdout (`internal/output.Printer`).** Mixing the two breaks scripts piping ctm output (`internal/logging/logging.go` package doc).\n- **UI lives behind shared providers** in `ui/src/App.tsx`: `ThemeProvider \u2192 QueryClientProvider \u2192 AuthProvider \u2192 SseProvider \u2192 AuthGate`. New routes should use `react-router` v7 declarative routes inside the existing `createBrowserRouter`. Server state must go through React Query; never `useState`+`fetch` for API data.\n- **UI alias is `@` \u2192 `ui/src/` only** (`ui/vite.config.ts`, `ui/tsconfig.app.json` paths). Don't introduce new aliases.\n- **Embed-path constraint:** `//go:embed` rejects parent-relative paths, so the UI bundle is rsync'ed into `internal/serve/dist/` (sibling of the Go file using `embed.FS`). Don't try to embed `ui/dist/` directly. (`Makefile` comment.)\n\n## Gotchas\n\n- **FTS5 build tag.** Every `go build` / `go test` / `go install` must include `-tags sqlite_fts5`. Missing it causes a runtime panic at boot, not a build error. (`Makefile` line ~12, `internal/serve/server.go` opens an FTS5-backed cost/search store.)\n- **`ctm serve` single-instance is silent.** If port 37778 is already owned by another `ctm serve` (detected via the `X-Ctm-Serve` header on `/healthz`), the new process exits with status 0. If a *non*-ctm-serve process owns it, it errors out without disturbing the other listener (`cmd/serve.go`, `internal/serve/server.go:probeIsCtmServe`). Don't conclude \"it's running\" from a zero exit code; hit `/healthz` to be sure.\n- **`ctm serve` is auto-spawned** by `attach`/`new`/`yolo` via `proc.EnsureServeRunning(...)` (`cmd/attach.go:55`). Tests and dev loops sometimes need it explicitly stopped \u2014 there's no `ctm serve stop`; send SIGTERM to the process or use the in-process `Server.Shutdown(reason)` if you have a handle.\n- **Linux-only `/proc` dependence in `internal/claude/process.go`.** `FindClaudeChild` parses `/proc` directly, no `runtime.GOOS` branches; silently fails on macOS/BSD (documented in `docs/robustness-audit.md` row 3). The release workflow still ships darwin binaries \u2014 those binaries' `/proc` lookups are no-ops.\n- **YOLO mode auto-commits** a git checkpoint before bypassing claude permissions (`cmd/yolo.go:gitCheckpoint`). Plain unsigned commit, no tag/GPG/SHA pin (`docs/robustness-audit.md` row 7). When testing yolo flows in a real repo, expect a new local commit; the audit file says no push/pull.\n- **UI E2E never hits a real daemon.** Playwright mocks `/api` + `/events` at the page level (`ui/playwright.config.ts` doc comment, `ui/e2e/`). The webserver is `vite preview --port 4173 --strictPort` against the built `dist/`. `make e2e` rebuilds first; running `playwright test` directly works only if `pnpm build` has run recently. Chromium must be installed via `pnpm exec playwright install chromium` once.\n- **`config.HookTimeoutSec = 0` does NOT mean \"no timeout\" \u2014 it means \"use default\" (5s).** Set a very large number to effectively disable. Same pattern for log rotation caps and attention thresholds (`internal/config/config.go` Resolved() helpers).\n- **Vite dev proxy must not buffer SSE.** `/events` is HTTP/1.1 keep-alive (not WS). The proxy config in `ui/vite.config.ts` explicitly sets `ws: false`; don't change it.\n- **PRs add tests; the regression pack grows, doesn't get replaced** (`Makefile` regression-target comment). Every fix or feature is expected to land with a unit / vitest / e2e case.\n- **`docs/robustness-audit.md`** (dated 2026-04-18) is a known-issues catalogue with file:line references. Read it before claiming any defensive feature is in place \u2014 many items are listed as `partial` or `no` (notably: file perms 0644 vs 0600 on backups, schema validation on overlay, signed releases, OpenTelemetry).\n- **`integration_test.go` references `ctmRun(t, home, \"safe\", ...)`** but I did not find a `cmd/safe.go`. The help test asserts `safe` appears in `ctm help` output (`integration_test.go:39`). Either the command is registered indirectly (yolo alias?) or the test is stale \u2014 verify before relying on `ctm safe`. `[inferred]`\n- **`.claude/worktrees/agent-*` and `.superpowers/brainstorm/...`** appear in the file tree but are agent-runtime artifacts, not source. They contain duplicate copies of `cmd/` files in worktrees \u2014 do not edit those.\n\n## Where to look next\n\n- Architecture & components \u2192 `docs/project/architecture.md`\n- Data model (state files + SQLite tables) \u2192 `docs/project/data-model.md`\n- UI \u2192 `docs/project/ui.md`\n- Key flows (attach, ctm serve startup, tool-use logging, web UI mutation) \u2192 `docs/project/flows.md`\n- Conventions (full set) \u2192 `docs/project/conventions.md`\n- External integrations (claude CLI, tmux, optional webhook) \u2192 `docs/project/integrations.md`\n- Build & deploy details \u2192 `docs/project/build-and-run.md`\n"}, {"name": "notes.md", "type": "text", "content": "# Notes \u2014 project-summarizer eval, ctm, iteration 1\n\n## 1. Deep-dives written and why\n\n| File | Rationale |\n|------|-----------|\n| `PROJECT_SUMMARY.md` | Always written. |\n| `docs/project/architecture.md` | Multi-component system (CLI + HTTP daemon + embedded React SPA), non-trivial layering (`cmd/` \u2192 `internal/` with `internal/serve/` as a self-contained subtree using HTTP-loopback IPC back to the CLI). Worth its own file. |\n| `docs/project/data-model.md` | Multiple state stores (config.json, sessions.json, user.json, JSONL logs, SQLite ctm.db) with non-obvious interplay (schema_version migrations, atomic writes, FTS5). An agent modifying state-handling code must know which file is the source of truth. |\n| `docs/project/ui.md` | Frontend is a real React 19 SPA with React Query, react-router 7, shadcn primitives, SSE provider, Playwright E2E \u2014 too much to fold into the top-level summary. |\n| `docs/project/flows.md` | Four high-value journeys (attach, daemon startup, PostToolUse \u2192 SSE feed, UI mutation) cross multiple packages and would each be slow to reconstruct from cold reads. |\n| `docs/project/conventions.md` | Adding a CLI subcommand, an HTTP route, a UI hook, or a lifecycle event each follow specific multi-file recipes. The \"things to avoid\" list pulls in real audit findings. |\n| `docs/project/integrations.md` | Even though only two hard externals (tmux, claude) and one optional (webhook), the *non*-integrations are worth stating explicitly so an agent doesn't assume cloud SDKs / DBs / brokers exist. |\n| `docs/project/build-and-run.md` | Build is multi-step (UI \u2192 rsync \u2192 Go) with a hard build-tag requirement (`sqlite_fts5`) and an embed-path constraint. One-line `go build` does not work; this file documents why and how. |\n\n## 2. Deep-dives skipped and why\n\nNone. All seven canonical deep-dives were warranted for this project size and complexity. I considered folding `integrations.md` into `architecture.md` since the integration count is low, but kept it separate because (a) the *non*-integrations list (no DB server, no cloud, no telemetry) is itself useful context, and (b) the optional webhook needs configuration documentation that would clutter architecture.\n\n## 3. Inferred vs verified\n\nItems I marked `[inferred]` and flagged for later verification:\n\n- **Argon2id** as the password algorithm in `internal/serve/auth/`. Inferred from `golang.org/x/crypto` in `go.mod` and the `algo`/`params` fields. Verify by reading `internal/serve/auth/password.go`.\n- **`HookTimeout()` default = 5 seconds.** I cited the Resolved-helper pattern but the actual default constant (`DefaultHookTimeoutSec`) was visible in code only as a name; I didn't see the literal value. Verify in `internal/config/config.go`.\n- **`Hub.NewHub(0)`** \u2014 I called out that whether `0` means unbounded or a default needs verification. `internal/serve/events/hub.go` not opened.\n- **`cmd/log_tool_use.go` reads from stdin.** Inferred from Claude Code hook conventions. Verify in the file itself.\n- **`integration_test.go` references `ctm safe`** \u2014 the help-text test asserts `safe` appears, but I did not find a `cmd/safe.go`. Either it's a yolo flag or the test is stale. Worth a one-line check.\n- **`useTheme.tsx` honours `prefers-color-scheme`** \u2014 explicitly flagged as not verified; check before claiming a11y compliance.\n- **No code-splitting / `React.lazy`** in the UI \u2014 inferred from `App.tsx` having all-static imports. Trivial to confirm.\n- **Vite proxy `ws: false` for SSE** \u2014 verified directly in `ui/vite.config.ts`.\n- **MSW usage** \u2014 `msw` is in devDependencies; whether vitest tests use it (vs. only Playwright route mocks) needs `ui/src/test-setup.ts` to be read.\n- **`docs/superpowers/specs/2026-04-20-ctm-serve-ui-v0.1-design.md`** as the rationale for the daemon split \u2014 inferred from filename only.\n- **The route table** in `internal/serve/server.go` \u2014 I did not read all 33 KB of `server.go`. The handler files in `internal/serve/api/` and the grep for `/api/...` strings gave me high confidence in the surface, but the exact routing-table pattern (mux per resource? per-method? subrouters?) wasn't observed.\n- **`tsconfig.app.json` paths** \u2014 I claimed it has `@` alias; verify (only `tsconfig.json` was read in full; the references show it points at `tsconfig.app.json` and `tsconfig.node.json`).\n- **`cmd/bootstrap.go`** as the first-time-setup command \u2014 inferred from the filename.\n\n## 4. Skill friction\n\nWhat worked well:\n\n- The \"sample, don't read everything\" guidance was practical. With heavy use of `ctx_batch_execute` and grep-based listings, I avoided ever opening `internal/serve/server.go` (33 KB) in full and still produced grounded docs.\n- The deep-dive table in `SKILL.md` is decisive \u2014 for each potential file I had a clear yes/no test.\n- The `[inferred]` discipline is the single highest-leverage rule. It actively prevented me from making confident claims about the auth-cookie format or the hub's buffer policy.\n\nWhat I found friction with:\n\n1. **\"Read on-demand\" for `deep-dive-templates.md`** \u2014 I had to write 6 deep-dives, so loading the file once was efficient. The instruction \"don't load all upfront\" is right for small projects but mildly pessimistic for ones that warrant 5+ deep-dives. A note like \"load once if writing >=4 deep-dives\" would help.\n2. **CLI-tool vs web-service archetype confusion** \u2014 ctm is genuinely both. The skill says \"pick the dominant flavor for the top-level summary and use deep-dives for the rest.\" I picked CLI as primary but the daemon side is meaty enough that `architecture.md` and `flows.md` ended up being half web-service. The phrasing in `by-project-type.md` (`Strong candidate for ...`) handled this fine \u2014 but the skill could be more explicit that hybrid projects often warrant both flavors of deep-dive.\n3. **The \"Status: active \u2014 last commit X days ago\" Identity field** is awkward when you can't tell from one commit whether the project is genuinely active or just had one update; for ctm it was fine (same-day commits in `internal/serve/` and README), but the heuristic isn't bulletproof. I cited the date and let the reader judge.\n4. **Embed-path / build-tag idiosyncrasies** were the most valuable findings, and the `Gotchas` section of the template is the right place \u2014 but the skill might benefit from a small \"Build-time gotchas worth surfacing\" prompt. I caught these only because they were prominent in `Makefile` comments. In a project where they're hidden in a CI file, I might miss them.\n5. **The route table verification** \u2014 for a Go web service with ~25 handlers wired in a single file, \"every command listed: confirm it appears in the source\" is hard without reading that file. I leaned on `grep '\"/api/'` results from tests and let `[inferred]` cover gaps. This is consistent with the skill's intent (sample, don't exhaustively read) but worth flagging that handler-count claims in `architecture.md` are derived from file listings, not the route table itself.\n6. **The \"uncategorized gotchas\" reporting in Step 6** is good in spirit but vague in practice. I rolled them into the `Gotchas` sections of summary + conventions \u2014 the skill could be explicit that the summary's Gotchas list and `conventions.md`'s \"Things to avoid\" / \"Things to revisit\" are the right homes.\n\n## 5. Approximate time spent\n\nRough breakdown (my sense, not measured):\n\n- Reading the skill: 2 minutes (single batch).\n- Surveying the repo via 3 `ctx_batch_execute` calls: ~5 minutes (most of it was the model digesting indexed snippets).\n- Drafting the seven docs: the bulk of the work \u2014 call it 12-15 minutes of tool calls + writing.\n- Total: ~20 minutes of effective work.\n\nWas the \"sample don't read everything\" guidance practical here? **Yes, decisively.** With ~50,000 lines of Go + ~5,000 lines of TS across `cmd/`, `internal/`, and `ui/`, exhaustively reading would have blown context budget and produced worse docs. The signal-hunting approach (one entry point per package, one test, key configs, README, CI files, plus targeted greps for things like `fireHook` call sites and `/api/...` strings) gave me enough surface area to write grounded summaries with explicit `[inferred]` markers where I didn't verify. The 33 KB `internal/serve/server.go` was the one file I deliberately didn't open and the docs are still high-fidelity.\n\nThe biggest leverage came from `ctx_batch_execute` letting me run 20 commands and 10 queries in one round trip \u2014 this is the right shape for the survey step in the skill.\n"}], "grading": null}, {"id": "eval-design-system-with_skill", "prompt": "Help me understand this codebase at ~/projects/design-system \u2014 I want to onboard another AI agent to make UI improvements.", "eval_id": "design-system", "outputs": [{"name": "PROJECT_SUMMARY.md", "type": "text", "content": "# Project Summary: @ossrandom/design-system\n\n> Generated by `project-summarizer` on 2026-04-26. Audience: AI agents (and humans) who need to understand and modify this codebase. Every claim should be checkable against a file or command; items marked `[inferred]` were not directly verified.\n\n## Identity\n\n- **What it is:** A strongly-typed React component library (\"RandomCodeSpace Design System\") shipped as an npm package \u2014 buttons, inputs, layout, feedback, data-display, etc. \u2014 themeable via CSS variables, with zero runtime dependencies beyond `react`/`react-dom`.\n- **Type:** Library (npm package). Also bundles design assets (brand SVGs, token CSS), an HTML preview gallery, and JSX reference layouts under `ui_kits/`.\n- **Status:** Pre-release. `version 0.1.0` in `package.json:3`; only two commits in `git log` (initial + checkpoint), most recent `2026-04-26`. CI lint/test steps marked `continue-on-error` (\"remove once eslint config lands\" / \"remove once tests land\" \u2014 `.github/workflows/ci.yml:34, 38`), and `find -name '*.test.*'` returned zero files. Treat as scaffolded but not battle-tested.\n- **Primary language(s):** TypeScript 5.6, React 18 (peer), CSS. ESM-only (`\"type\": \"module\"` in `package.json:23`).\n\n## Tech stack\n\n- **Frameworks / key libs:** React 18 (peer), TypeScript 5.6, Vitest 2 (`devDependencies` \u2014 no actual tests written yet), ESLint 9 + `@typescript-eslint` 8 (no config file present `[inferred]` \u2014 only `eslint \"src/**/*.{ts,tsx}\"` script).\n- **Datastore(s):** none.\n- **Build system:** `tsc -p tsconfig.build.json` plus a one-line Node script that concatenates `colors_and_type.css` + `src/styles.css` into `dist/styles.css` (`package.json:36`). pnpm 9.12.0 is the package manager (`packageManager` field).\n- **Test framework(s):** Vitest is declared but no `*.test.*` files exist in the repo (verified via `find`). The `pnpm test` step in CI is `continue-on-error: true`.\n- **Manifest files read:** `package.json`, `tsconfig.json`, `tsconfig.build.json`, `pnpm-lock.yaml` (existence only), `.gitignore`, `.npmignore`.\n\n## Entry points\n\n| Entrypoint | File | Purpose |\n|------------|------|---------|\n| Public package entry (runtime + types) | `src/index.tsx` | Re-exports every component and every type from `./components/*` and `./tokens` |\n| Token type unions | `src/tokens.ts` | `BrandColor`, `SemanticColor`, `ThemeMode`, `Size`, `SpaceSize`, `Radius`, `Shadow`, etc. \u2014 exported as a sub-path: `@ossrandom/design-system/tokens` |\n| Prop interfaces (types-only, no runtime) | `src/components.d.ts` | `ButtonProps`, `InputProps`, `TableProps<T>`, `ToastApi`, \u2026 one master file |\n| Stylesheet | `dist/styles.css` (built from `colors_and_type.css` + `src/styles.css`) | Imported as `@ossrandom/design-system/styles.css` |\n| Theme primitive | `src/components/theme.tsx` | `ThemeProvider` stamps `data-theme=\"light\\|dark\"` on `<html>`; `useTheme()` hook |\n| Imperative toast API | `src/components/feedback.tsx:230` | `toast.show / dismiss / promise` \u2014 module-level singleton store; needs `<ToastRegion />` mounted |\n\n## Directory map\n\n```\ndesign-system/\n\u251c\u2500\u2500 src/\n\u2502   \u251c\u2500\u2500 index.tsx              \u2014 public entry; re-exports all components + types\n\u2502   \u251c\u2500\u2500 tokens.ts              \u2014 token type unions (`BrandColor`, `Size`, ...)\n\u2502   \u251c\u2500\u2500 components.d.ts        \u2014 every prop interface in one file (types-only, ~700 LOC [inferred])\n\u2502   \u251c\u2500\u2500 styles.css             \u2014 `.rcs-*` component styles (concatenated into dist/styles.css)\n\u2502   \u251c\u2500\u2500 internal/\n\u2502   \u2502   \u2514\u2500\u2500 cx.ts              \u2014 `cx()` className composer + `uid()` id generator + `noop()`\n\u2502   \u2514\u2500\u2500 components/            \u2014 one .tsx per component family (15 files)\n\u2502       \u251c\u2500\u2500 buttons.tsx        \u2014 Button, IconButton, ButtonGroup\n\u2502       \u251c\u2500\u2500 inputs.tsx         \u2014 Input, NumberInput, PinInput, Textarea\n\u2502       \u251c\u2500\u2500 selects.tsx        \u2014 Select<V>, Combobox<V>\n\u2502       \u251c\u2500\u2500 form-controls.tsx  \u2014 Checkbox, RadioGroup<V>, Switch, Slider, DatePicker,\n\u2502       \u2502                        DateRangePicker, FileUpload, FormField\n\u2502       \u251c\u2500\u2500 badges.tsx         \u2014 Badge, StatusDot\n\u2502       \u251c\u2500\u2500 layout.tsx         \u2014 Card, Space, ScrollDiv, Divider, Grid (+ Grid.Col)\n\u2502       \u251c\u2500\u2500 navigation.tsx     \u2014 Tabs<K>, Menu<K>, Breadcrumb, Pagination, Steps\n\u2502       \u251c\u2500\u2500 feedback.tsx       \u2014 Alert, Modal, Drawer, Progress, Skeleton, Spin,\n\u2502       \u2502                        Tooltip, toast (singleton), ToastRegion\n\u2502       \u251c\u2500\u2500 data-display.tsx   \u2014 Table<T>, Stat (+ Sparkline), Avatar, Timeline\n\u2502       \u251c\u2500\u2500 chat.tsx           \u2014 Chat\n\u2502       \u251c\u2500\u2500 code.tsx           \u2014 CodeBlock, Markdown, Terminal, RichTextEditor\n\u2502       \u251c\u2500\u2500 page.tsx           \u2014 PageHeader, AppShell\n\u2502       \u2514\u2500\u2500 theme.tsx          \u2014 ThemeProvider, useTheme\n\u251c\u2500\u2500 colors_and_type.css        \u2014 design tokens (CSS vars: `--bg-0`, `--accent`, `--font-sans`, ...)\n\u251c\u2500\u2500 preview/                   \u2014 39 standalone HTML cards (one per token/component) \u2014 manual visual reference\n\u251c\u2500\u2500 ui_kits/                   \u2014 JSX reference layouts (NOT shipped to npm)\n\u2502   \u251c\u2500\u2500 marketing/             \u2014 Hero, FeatureGrid, CLIShowcase, Pricing, Nav, Footer\n\u2502   \u251c\u2500\u2500 app/                   \u2014 Sidebar, Topbar, ServicesGrid, LogTail, CommandMenu (Cmd+K)\n\u2502   \u2514\u2500\u2500 docs/                  \u2014 DocsSidebar, Article, TOC\n\u251c\u2500\u2500 assets/                    \u2014 brand SVGs (logo, logomark, wordmark; light + dark)\n\u251c\u2500\u2500 screenshots/               \u2014 promotional screenshots (not code)\n\u251c\u2500\u2500 .github/\n\u2502   \u251c\u2500\u2500 workflows/\n\u2502   \u2502   \u251c\u2500\u2500 ci.yml             \u2014 typecheck \u2192 lint \u2192 test \u2192 build on push/PR\n\u2502   \u2502   \u2514\u2500\u2500 release.yml        \u2014 tag-driven publish to npm + GitHub Packages\n\u2502   \u251c\u2500\u2500 SETUP.md               \u2014 first-release secrets/environment setup\n\u2502   \u251c\u2500\u2500 PUSH.md                \u2014 first-push instructions\n\u2502   \u2514\u2500\u2500 RELEASING.md           \u2014 `pnpm version` cheat sheet\n\u251c\u2500\u2500 README.md                  \u2014 install, usage, layout, releases\n\u251c\u2500\u2500 SKILL.md                   \u2014 Claude-skill manifest pointing at brand/preview/ui_kits\n\u251c\u2500\u2500 package.json\n\u251c\u2500\u2500 tsconfig.json              \u2014 base TS config (`rootDir: src`, `outDir: dist`)\n\u2514\u2500\u2500 tsconfig.build.json        \u2014 extends base; excludes `*.test.*`, `preview/`, `src/styles.css`\n```\n\nSkipped: `node_modules/`, `dist/`, `.git/`.\n\n## Run, build, test\n\nCommands taken from `package.json:30-39` and `.github/workflows/ci.yml`.\n\n```bash\n# install deps (frozen lockfile in CI; pnpm 9.x required)\npnpm install\n\n# typecheck (no emit)\npnpm typecheck            # \u2192 tsc --noEmit\n\n# lint (no eslint config committed [inferred] \u2014 CI marks this continue-on-error)\npnpm lint                 # \u2192 eslint \"src/**/*.{ts,tsx}\"\n\n# tests (none currently \u2014 CI marks this continue-on-error)\npnpm test                 # \u2192 vitest run\n\n# build dist/ (.js + .d.ts + sourcemaps + concatenated styles.css)\npnpm build\n# == tsc -p tsconfig.build.json\n#    && node -e \"fs.writeFileSync('dist/styles.css', colors_and_type.css + '\\n' + src/styles.css)\"\n\n# preview (no dev server \u2014 opens a static HTML)\npnpm preview              # \u2192 echoes \"Open preview/responsive-check.html in a browser\"\n\n# release (tag-driven \u2014 triggers .github/workflows/release.yml)\npnpm version <patch|minor|major>\ngit push --follow-tags\n```\n\n**Required env / external services:**\n\n- **Runtime:** none. Library is pure types + React components, no I/O.\n- **Build:** Node `>=18.18` (`package.json:53`), pnpm 9.x.\n- **CI / release:** Node 20 (`.github/workflows/ci.yml:25`, `.github/workflows/release.yml`). `NPM_TOKEN` secret required for npm publish (`.github/SETUP.md`); `GITHUB_TOKEN` is provided automatically.\n- **Optional fonts:** `colors_and_type.css:4` `@import` to Google Fonts as a fallback. Local `@font-face` rules below it always win \u2014 but `assets/fonts/Inter-Regular.woff2` etc. are referenced and may or may not exist `[inferred \u2014 not verified in this survey]`.\n\n## Conventions an agent must respect\n\nThe top rules. Full set in `docs/project/conventions.md`.\n\n1. **CSS class naming = `.rcs-*`** (`src/styles.css`). Variants use BEM-ish double-dash: `.rcs-button--primary`, `.rcs-alert--danger`. Always compose with `cx(...)` from `src/internal/cx.ts` \u2014 don't hand-concatenate strings.\n2. **Tokens come from CSS custom properties**, never hardcoded values. Use `var(--accent)`, `var(--bg-0)`, `var(--font-sans)`, etc. \u2014 full set in `colors_and_type.css`. Hex literals only for the JS-side `BRAND_HEX` map in `src/components/theme.tsx:13`.\n3. **Prop interfaces live in `src/components.d.ts`**, not next to components. All extend `BaseProps` (`id`, `className`, `style`, `data-testid`). Arrays are `readonly`. Event handlers use specific React types \u2014 never `(value: any) => void` (see header comment at top of `components.d.ts`).\n4. **Adding a component:** create `src/components/<name>.tsx`, define `<Name>Props` in `src/components.d.ts`, add styles to `src/styles.css` using `.rcs-<name>*` classes, add a re-export line to `src/index.tsx`. (README section \"Editing components\".)\n5. **Theme switching is global side-effectful.** `ThemeProvider` (`src/components/theme.tsx:32`) sets `document.documentElement.setAttribute(\"data-theme\", mode)` in `useEffect`. All CSS variable swaps key off this. No `<html data-theme>` = light mode by default.\n6. **`toast` is a module-level singleton** (`src/components/feedback.tsx:226`). It's a plain array + `Set<Listener>`, not a React context. Mount `<ToastRegion />` exactly once near the root; calls from anywhere will surface there.\n7. **Strict TS everywhere** \u2014 `strict`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `isolatedModules` (`tsconfig.json`). `tsconfig.build.json` excludes tests and `preview/`.\n8. **Pure side-effect declaration:** `package.json:29` declares `\"sideEffects\": [\"**/*.css\"]` \u2014 bundlers may tree-shake JS but must keep CSS imports.\n\n## Gotchas\n\nThings an agent reading linearly would miss.\n\n- **No tests exist.** `find -name '*.test.*'` returns nothing. CI's `Test` step is `continue-on-error: true` (`.github/workflows/ci.yml:38`). Vitest is installed but unused. Don't claim \"tests pass\" as a quality signal \u2014 there are none.\n- **No ESLint config committed.** Only the `lint` script is wired. `eslint` will likely error or use defaults; CI's `Lint` step is `continue-on-error: true` (`.github/workflows/ci.yml:34`).\n- **`preview` script is a no-op.** It just `echo`es a sentence; there is no dev server. The HTML files in `preview/` are opened directly in a browser. Each links `../colors_and_type.css` directly.\n- **`ui_kits/*/index.html` use unpkg CDN at runtime** (React + Babel-standalone + lucide via `https://unpkg.com/...`, e.g. `ui_kits/marketing/index.html:9`). Will fail offline / behind firewalls. These are throwaway prototyping shells, **not** consumers of the published `dist/`.\n- **`colors_and_type.css:4` imports Google Fonts** as a static-checker fallback. Air-gapped consumers should self-host fonts (`assets/fonts/Inter-Regular.woff2` is referenced but presence not verified `[inferred]`).\n- **Build script is shell-quoted Node one-liner** (`package.json:36`). It uses `require('fs')` synchronously. If the build command grows further, extract it \u2014 debugging quoted JS in `package.json` is painful.\n- **Release pipeline refuses to publish if the git tag doesn't match `package.json` version** (`.github/workflows/release.yml`, \"Verify tag matches package version\" step). Always bump via `pnpm version <bump>` so they stay in sync.\n- **`screenshots/` directory contents** were not opened during this survey \u2014 likely PNGs. Agents shouldn't treat them as code.\n- **`SemanticColor` type contains a self-questioning comment** in `src/tokens.ts:21` (`\"success\" // green-ish via signal-red? we use mono \u2014 runtime cod-gray w/ filled dot`). Treat the semantic palette as not fully settled \u2014 verify against `colors_and_type.css` semantic-token block before assuming green/yellow exist.\n- **Two `git log` entries only** (`b0ea3b1 checkpoint: pre-yolo`, `b5f630a Initial Commit`). There's no history to mine for rationale; the README and `.github/*.md` are the only narrative sources.\n- **`Lint`/`Test` `continue-on-error` flags** are the only thing keeping CI green. Anyone removing them must first add a working ESLint config and at least one test.\n\n## Where to look next\n\n- UI / design-system internals \u2192 `docs/project/ui.md`\n- Conventions (full) \u2192 `docs/project/conventions.md`\n- Build & release pipeline \u2192 `docs/project/build-and-run.md`\n\n(No `architecture.md`, `data-model.md`, `flows.md`, or `integrations.md` \u2014 see `notes.md` for why.)\n"}, {"name": "notes.md", "type": "text", "content": "# notes.md\n\n## 1. Deep-dives written and why\n\n- **`docs/project/ui.md`** \u2014 This is itself a UI library. The user explicitly wants to onboard another agent for \"UI improvements\", so the internal UI architecture (components, tokens, theming, conventions for styling) is the highest-value deep-dive.\n- **`docs/project/conventions.md`** \u2014 There are enough subtle conventions (single types file, `cx()` usage, `.rcs-*` BEM, no path aliases, strict `readonly`) that they couldn't fit in `PROJECT_SUMMARY.md`'s top-level list without crowding it. A future agent making changes will read this first.\n- **`docs/project/build-and-run.md`** \u2014 Build is non-trivial: two-step (tsc + CSS concatenation), tag/version verification gate, dual-registry publish, and several gotchas (quoted Node one-liner, no dev server, `continue-on-error` flags). The release pipeline alone justifies a dedicated doc.\n\n## 2. Deep-dives skipped and why\n\n- **`architecture.md`** \u2014 Skipped. The architecture is one-layer: `src/components/*.tsx` \u2192 `src/styles.css` + token CSS \u2192 bundler. There's no service boundary, no layering, no event flow. Anything I'd write would either repeat the directory map in `PROJECT_SUMMARY.md` or pad with prose.\n- **`data-model.md`** \u2014 Skipped. No database, no ORM, no schema files, no domain entities. The closest thing to \"data\" is the token type unions in `src/tokens.ts`, which are already documented in `ui.md`.\n- **`flows.md`** \u2014 Skipped. No user/system journeys to trace. A library has function calls, not flows. I considered \"trace `toast.show()` \u2192 `ToastRegion` render\" as a candidate flow, but it's 6 lines of code already cited in `PROJECT_SUMMARY.md` Gotchas / `ui.md`. A flow doc would be padding.\n- **`integrations.md`** \u2014 Skipped. Zero external integrations at runtime (zero runtime deps). The CDN imports in `colors_and_type.css` (Google Fonts) and `ui_kits/*/index.html` (unpkg) are already flagged as gotchas in `PROJECT_SUMMARY.md` and `build-and-run.md`. The publish targets (npm, GitHub Packages) are covered in `build-and-run.md`. Splitting them into a third file would dilute, not clarify.\n\n## 3. Inferred vs verified \u2014 items I'd want to verify later\n\nMarked `[inferred]` in the docs:\n\n- **No ESLint config committed** \u2014 inferred from the absence of `eslint.config.js` / `.eslintrc*` in my `ls` output and the CI's `continue-on-error` comment. Worth a `find -name 'eslint*'` to be 100% sure.\n- **`assets/fonts/Inter-Regular.woff2` etc. presence** \u2014 `colors_and_type.css` references them via `@font-face` `src: url(\"assets/fonts/Inter-Regular.woff2\")`, but I did not list `assets/fonts/`. If the fonts aren't there, air-gapped consumers fall back to Google Fonts via the `@import`.\n- **`components.d.ts` ~700 LOC** \u2014 I read `wc -l` output but didn't pull the exact number into context; cited as `[inferred]`. A precise count would replace the rough figure.\n- **No `.nvmrc` / `.tool-versions` / `mise.toml`** \u2014 based on the root `ls`, but not exhaustively confirmed.\n- **`release.yml` 4th job** \u2014 the file was truncated in my batch (`(2)` chunk cut off at `publish-gpr:`). The README enumerates a \"GitHub Release\" 4th step; I cited that as `[inferred]` from README rather than the workflow file directly.\n- **Theme accent override doesn't recompute derivative variables** (`--accent-hover`, `--accent-soft`) \u2014 based on reading `theme.tsx:35-39` which only writes `--accent`. I didn't trace the CSS to confirm whether these derivatives are defined as functions of `--accent` or as standalone tokens.\n- **`.tsx` extensions for files that may not need JSX** \u2014 convention statement; not exhaustively checked.\n- **Test file colocation convention** \u2014 there are no tests; I guessed colocated since `tsconfig.build.json` excludes `**/*.test.ts*` patterns (suggesting they'd live alongside source).\n- **`SemanticColor` self-questioning comment** \u2014 the code comment in `src/tokens.ts:21` is real; my interpretation that \"the semantic palette is not fully settled\" is a soft inference from that comment plus the lack of green/yellow tokens.\n\n## 4. Skill friction\n\n- **Step 1 ambiguity for libraries.** The skill's table has no row that says \"this is a UI library / design system\". I used `ui.md` for the internals (since the user said \"UI improvements\") but the by-project-type guide for **Library** says \"skip / shrink: deployment, infra. Libraries rarely have those.\" \u2014 yet this library has a non-trivial release pipeline that genuinely warranted `build-and-run.md`. The existing types (\"CLI tool\", \"Library\", \"Web app\", \"Web service\", \"Mobile\", \"Monorepo\", \"Infra\", \"Data pipeline\") don't have a clean fit for \"design-system / component library\". I picked Library + treated `ui.md` as describing the library's UI domain \u2014 worked, but I had to interpret.\n- **`docs/project/ui.md` is described as \"Has a frontend\"** in the SKILL.md table. A component library *is* a frontend dependency, but the template's questions (\"Routing \u2014 file-based vs. config-based\") don't apply. I had to skip multiple template sections (routing, data fetching, forms-as-major-surface) and stretch others (state management \u2192 \"the toast singleton\"). A note in the skill saying \"for component libraries, repurpose `ui.md` to document the library's internal UI architecture\" would help.\n- **\"Single types file\" was unusual.** No skill guidance on how to flag a non-standard pattern that the next agent should respect rather than refactor. I leaned on `conventions.md` \"Things to avoid\" \u2014 but a more explicit hint in the skill (\"call out non-standard organizational choices the next agent might 'fix' against the user's wishes\") would be useful.\n- **`continue-on-error` on lint/test in CI** \u2014 high-value gotcha but felt like it needed to live in three places (top-level Gotchas, conventions, build-and-run). I duplicated. Skill could note: \"important gotchas may legitimately be repeated in deep-dives \u2014 don't be afraid of one-line cross-references.\"\n- **`SKILL.md` (in the target repo)** \u2014 this is a Claude-skill manifest for the project's *consumers*, not for the project itself. I almost mistook it for a meta-document about this repo's structure. The skill being summarized had a `SKILL.md` of its own that was a red herring. Worth a heads-up in the skill: \"manifests like `SKILL.md`, `AGENTS.md`, `CLAUDE.md` may exist as content the project ships, not as docs about the project.\"\n\n## 5. Approximate time spent\n\n- **Survey (steps 2\u20133):** two `ctx_batch_execute` calls covering ~50 commands and ~150 KB of indexed source. Maybe 30 seconds of model time, but token-cheap because raw file contents stayed in the sandbox and I queried them via FTS5.\n- **Writing (step 5):** four files. The bulk of the cost.\n- **\"Sample don't read everything\" worked very well here.** Reading `src/index.tsx` (25 lines), `tokens.ts` (60 lines), `internal/cx.ts` (20 lines), `theme.tsx` head (~70 lines), `buttons.tsx` head (~80 lines), `feedback.tsx`'s toast section (~50 lines), and grepping `.rcs-*` classes was enough to derive every convention claim. I never needed `inputs.tsx`, `selects.tsx`, `form-controls.tsx`, `chat.tsx`, `code.tsx`, `page.tsx`, `navigation.tsx`, `badges.tsx`, `layout.tsx`, or 95% of `components.d.ts`. The fanned-out preview HTMLs and `ui_kits/*` JSX I treated as listing-only \u2014 confirmed they exist, didn't read internals.\n- **What would have blown the budget:** reading every component source. There are 15 component files plus 3 JSX kits plus 39 preview HTMLs \u2014 easily >5k lines. The skill's \"sample for signals\" guidance was the right call.\n"}], "grading": null}, {"id": "eval-gotk-with_skill", "prompt": "I just cloned this repo at ~/projects/gotk, can you summarize it so a future AI session has full context to make changes?", "eval_id": "gotk", "outputs": [{"name": "PROJECT_SUMMARY.md", "type": "text", "content": "# Project Summary: gotk\n\n> Generated by `project-summarizer` on 2026-04-26. Audience: AI agents (and humans) who need to understand and modify this codebase. Every claim should be checkable; items marked `[inferred]` were not directly verified.\n\n## Identity\n\n- **What it is:** A zero-dependency Go CLI that wraps verbose shell tools (`go test`, `git`, `grep`, `tsc`, `eslint`, `ls`, `tree`, `find`, `docker`, `kubectl`, `cargo`, `npm`, `curl`) and reshapes their stdout into compact summaries before the output reaches an LLM's context window. Includes a smart file reader (`gotk read`) and per-invocation analytics (`gotk gain`).\n- **Type:** CLI tool (single binary, stdlib-only Go).\n- **Status:** v0.1.0 (`main.go:9`). Repo is a fresh tree with no commits yet \u2014 `git status` shows all 29 source/doc files as untracked on branch `main`. Last file mtimes are 2026-04-22.\n- **Primary language:** Go 1.22 (`go.mod:3`), but built and verified on Go 1.26.2 in this sandbox (`go build` succeeds, `go test ./...` \u2192 `ok gotk 0.008s`).\n\n## Tech stack\n\n- **Frameworks / key libs:** none \u2014 `go.mod` has zero `require` lines (verified: `go.mod` is 21 bytes total, just `module gotk` + `go 1.22`). Everything is stdlib.\n- **Datastore(s):** none. Per-invocation analytics are appended as JSONL to `~/.gotk/history.jsonl` (overridable via `GOTK_HISTORY` env var) \u2014 see `track.go:50-58`.\n- **Build system:** plain `go build` / `go install`. A small `Makefile` wraps the common targets but is optional (`README.md` \u00a7 Install: \"no Makefile\" required).\n- **Test framework:** Go's built-in `testing` package. 9 `*_test.go` files, all colocated with the file under test (e.g. `filter_grep.go` \u2194 `filter_grep_test.go`).\n- **Manifest files read:** `go.mod`, `Makefile`, `.gitignore`, `README.md`, `GOTK.md`, `.github/copilot-instructions.md`.\n\n## Entry points\n\n| Entrypoint | File | Purpose |\n|------------|------|---------|\n| Binary `gotk` | `main.go` | Single CLI entry. Reads `os.Args[1]`, looks it up in the `handlers` dispatch table, falls through to `passthrough()` for unknown commands. |\n| Sub-command handlers | `filter_*.go` (one per command family) | Each exports a `func runX(args []string) int` that runs the underlying tool, reshapes stdout, and returns the exit code. |\n| `gotk gain` | `gain.go:13 runGain` | Reads `~/.gotk/history.jsonl` (JSONL written by `track.go:appendEvent`) and prints a savings summary. |\n\nThe `handler` type is `func(args []string) int` (`main.go:11`); every filter conforms to it.\n\n## Directory map\n\n```\ngotk/\n\u251c\u2500\u2500 main.go                  \u2014 entry point + dispatch table (handlers map)\n\u251c\u2500\u2500 common.go                \u2014 passthrough(), execExitCode(), stripANSI() \u2014 shared exec helpers\n\u251c\u2500\u2500 track.go                 \u2014 runCtx (raw/filtered byte counters), JSONL history append, countReader/countWriter\n\u251c\u2500\u2500 gain.go                  \u2014 `gotk gain` analytics renderer\n\u251c\u2500\u2500 filter_git.go            \u2014 git: --no-pager, color off, smart defaults per subcommand; gitDiff() promotes to --stat over 300 lines\n\u251c\u2500\u2500 filter_gotest.go         \u2014 `go test`: parse output, surface only failing tests + counts\n\u251c\u2500\u2500 filter_grep.go           \u2014 grep: group hits by file, cap 200 total / 25 per file\n\u251c\u2500\u2500 filter_lint.go           \u2014 eslint: forces --format=json, groups violations by ruleId\n\u251c\u2500\u2500 filter_listing.go        \u2014 ls / tree / find with sane defaults + line caps\n\u251c\u2500\u2500 filter_misc.go           \u2014 docker / kubectl / cargo / npm / curl: line-cap passthroughs; npm strips funding/notice noise\n\u251c\u2500\u2500 filter_read.go           \u2014 `gotk read <file>` smart reader: line numbers, blank-line collapse, long-line truncation\n\u251c\u2500\u2500 filter_tsc.go            \u2014 tsc: parse `file(L,C): error TSNNNN: msg`, group by TS-code\n\u251c\u2500\u2500 *_test.go                \u2014 colocated unit tests (one per filter)\n\u251c\u2500\u2500 go.mod                   \u2014 module gotk, go 1.22, ZERO require lines\n\u251c\u2500\u2500 Makefile                 \u2014 build / test / clean / doctor targets\n\u251c\u2500\u2500 README.md                \u2014 human-facing intro, install, usage\n\u251c\u2500\u2500 GOTK.md                  \u2014 instruction pack for AI assistants (Claude Code / Cursor / Codex)\n\u251c\u2500\u2500 .github/\n\u2502   \u2514\u2500\u2500 copilot-instructions.md  \u2014 repo-scoped Copilot instruction pack (rewrite rules)\n\u251c\u2500\u2500 .gitignore               \u2014 /bin/, /gotk, /gotk.exe, *.test, *.out, coverage.*, .DS_Store\n\u2514\u2500\u2500 bin/                     \u2014 local build output (gitignored; contains a pre-built `gotk` from a prior `make build`)\n```\n\nAll 23 `.go` files live flat at the repo root in `package main`. There are no subdirectories with source code.\n\n## Run, build, test\n\nCommands taken from `Makefile` and `README.md`:\n\n```bash\n# install (no third-party deps; works offline once cloned)\ngo install .                           # README.md \"Install\"\n# or\nmake build                             # produces ./bin/gotk (Makefile)\n\n# run tests\ngo test ./...                          # Makefile \"test\"; verified passing in this env\n\n# environment doctor (checks go/git/grep on PATH and reports GOPATH)\nmake doctor                            # Makefile \"doctor\"\n\n# clean local build output\nmake clean                             # rm -rf bin/\n```\n\n`Makefile` defines `GOFLAGS ?= -trimpath -ldflags=-s -ldflags=-w` for a stripped, reproducible binary.\n\n**Required env / external services:** none required. Optional:\n- `GOTK_HISTORY` \u2014 overrides the default analytics path (`~/.gotk/history.jsonl`). Read in `track.go:50`.\n- The wrapped tools themselves (`go`, `git`, `grep`, `tsc`, `eslint`, `ls`, `tree`, `find`, `docker`, `kubectl`, `cargo`, `npm`, `curl`) must be on `PATH` only when the corresponding `gotk <cmd>` is invoked. Missing tools yield exit code 127 via `common.go:execExitCode`.\n\nVerified locally: `go build` succeeds with the system Go 1.26.2; `go test ./...` reports `ok gotk 0.008s`.\n\n## Conventions an agent must respect\n\n(Top rules; full set in `docs/project/conventions.md`.)\n\n1. **Zero third-party dependencies.** `go.mod` must stay empty of `require` directives. The whole point of the project is \"stdlib only, builds offline\" (`README.md` \u00a7 Install). Don't introduce libraries.\n2. **One package, flat layout.** Every `.go` file is `package main` at the repo root. Don't introduce subpackages without a strong reason.\n3. **Filter signature is fixed.** Every command handler is `func runX(args []string) int`, registered in the `handlers` map in `main.go:13`. New commands plug into that map.\n4. **Stderr and exit codes are preserved verbatim.** Filters reshape stdout only \u2014 `cmd.Stderr = os.Stderr` everywhere; exit code comes from `common.go:execExitCode`. See `README.md` \u00a7 Use: \"Exit codes and stderr are preserved. Only stdout is reshaped.\"\n5. **Track raw vs. filtered bytes.** Filters that reshape output should wrap their reader in `countReader` and writer in `countWriter` (`track.go`) so `gotk gain` can compute savings. Pure passthroughs and line-cap passthroughs already get this via the `execWithLineCap*` helpers.\n6. **Tests are colocated.** `xxx.go` \u2194 `xxx_test.go` in the repo root. Use the existing pattern: pure parsing functions are unit-tested directly without spawning subprocesses (see `filter_gotest_test.go:TestParseGoTestOutput_Failure`).\n7. **Pass through interactive / format-changing invocations.** Watch modes, JSON output flags, `--help`, `--version`, and user-supplied `--format` should bypass reshaping (e.g. `filter_gotest.go:isJSONFlag`, `filter_tsc.go` early `--watch`/`--help` check, `filter_lint.go:runLint` early `--format` check).\n\n## Gotchas\n\n- **No git history yet.** `git log` errors with \"your current branch 'main' does not have any commits yet\". Everything in the tree is untracked on a fresh `main` branch \u2014 there is no history to mine for ADRs or rationale.\n- **Pre-built binary in `bin/`** (`bin/gotk`, ~32K-ish, mtime 2026-04-22). It is gitignored (`/bin/` in `.gitignore`) and not part of the source. Don't trust it as authoritative; rebuild when in doubt (`make build` or `go install .`).\n- **History file silent failures.** `track.appendEvent` swallows every error from `MkdirAll`/`OpenFile`/`Marshal`/`Write` (`track.go:60-78`). Analytics are best-effort by design \u2014 never let them break a command. Don't add a `return err` here without rethinking the contract.\n- **Two install paths in the README disagree on Makefile.** `README.md` \u00a7 Install says \"no Makefile required\" (`go install .`); `GOTK.md` \u00a7 Install says the same. The `Makefile` is purely optional convenience. New contributors sometimes assume `make build` is the canonical path \u2014 it isn't.\n- **`isJSONFlag` and `--format` checks are flag-position blind.** `filter_gotest.go:isJSONFlag` matches `-json`, `--json`, `-test.v=json`, and `-json=\u2026`/`--json=\u2026` prefixes anywhere in args. `filter_lint.go:runLint` uses `hasFlag(args, \"--format\", \"-f\")` similarly. If a filter is treating a JSON-mode invocation as a normal one (or vice versa), the flag-detection logic is the first place to look.\n- **`gotk read` `--max-chars` defaults to 200.** Long lines are truncated at 200 chars by default (`filter_read.go:13 readDefaultMaxChars = 200`). Use `--raw` or `--max-chars 0` (the code likely handles 0; verify in `filter_read.go:renderReadFile` if needed) for full lines.\n- **`gotk lint` shells out to `eslint` directly** \u2014 no path resolution against `node_modules/.bin`. The user must have a global or shimmed `eslint`. `[inferred]` from `filter_lint.go:exec.Command(\"eslint\", ...)`.\n- **Two assistant instruction packs ship with the repo.** `GOTK.md` is the generic markdown pack (referenced via `@GOTK.md` from CLAUDE.md / AGENTS.md). `.github/copilot-instructions.md` is the GitHub Copilot repo-scoped variant. They overlap heavily \u2014 keep them in sync when changing rewrite rules.\n\n## Where to look next\n\n- Architecture & components \u2192 `docs/project/architecture.md`\n- Conventions (full) \u2192 `docs/project/conventions.md`\n- Build & deploy details \u2192 `docs/project/build-and-run.md`\n"}, {"name": "notes.md", "type": "text", "content": "# Notes \u2014 project-summarizer applied to gotk\n\n## Deep-dives written and why\n\n- **`docs/project/architecture.md`** \u2014 Even though gotk is \"small\", the dispatch + per-filter structure has enough variation across 8 filter files that a per-component table earns its keep. The component table also documents which strategy (pure passthrough / line-cap / stream-reshape / buffer-reshape) each filter uses, which is exactly what the next agent needs before adding a new command.\n- **`docs/project/conventions.md`** \u2014 The \"add a new filtered command\" recipe is the highest-leverage document for an agent modifying this repo. Folding it into PROJECT_SUMMARY.md would have crowded out the gotchas, and the recipe needs ~10 numbered steps with file refs to be useful. Conventions also pin the no-third-party-deps and no-subpackages invariants, which are load-bearing for the project's value proposition.\n- **`docs/project/build-and-run.md`** \u2014 Three install paths (`go install .`, `make build`, `go install ...@latest`), each with different prereqs and air-gap implications. Plus the no-CI / no-commits / pre-built-bin/ gotchas warrant a dedicated file rather than scattered notes in PROJECT_SUMMARY.\n\n## Deep-dives skipped and why\n\n- **`docs/project/data-model.md`** \u2014 No database, no ORM, no domain entities. The only persisted state is a JSONL history file with a fixed 6-field shape (`runEvent` in `track.go`); that's already captured in PROJECT_SUMMARY.md and architecture.md. A whole file would be skeletal noise.\n- **`docs/project/ui.md`** \u2014 No UI. CLI-only.\n- **`docs/project/flows.md`** \u2014 The \"user flow\" here is `dispatch \u2192 filter \u2192 exec child \u2192 reshape stdout \u2192 track event \u2192 exit`. That's a single path, and architecture.md's ASCII diagram already captures it. Per-command flows would just rephrase the per-filter rows in architecture.md.\n- **`docs/project/integrations.md`** \u2014 No external APIs, no queues, no third-party services. The tool only `os/exec`s local binaries. Documenting \"we exec git\" would not be useful.\n\n## Inferred vs verified\n\nMarked `[inferred]` in the docs (and would want to verify):\n\n- The exact line numbers I cited for `main.go:71-89` (the `main()` function body). The code is small enough that a quick re-read would confirm, but I didn't pin every single line during sampling.\n- `filter_lint.go` shells out to bare `eslint` without resolving `node_modules/.bin/eslint` \u2014 verified by reading `exec.Command(\"eslint\", full...)`, so this is on the boundary of inferred/verified. Marked inferred to be safe.\n- `go test -run TestName` for running a single test \u2014 standard Go convention, not specific to this project; called out as inferred.\n- \"No release automation\" \u2014 verified by checking `.github/` has only `copilot-instructions.md` and no `workflows/` dir, but the absence of GoReleaser config files etc. is inferred negative-evidence.\n\nVerified directly by execution:\n- `go build` succeeds on Go 1.26.2.\n- `go test ./...` passes (`ok gotk 0.008s`).\n- `go.mod` is 21 bytes with no `require` lines.\n- `.gitignore` content.\n- All filter file contents and the `handlers` map in `main.go`.\n- Git status: no commits yet, everything untracked on `main`.\n\n## Skill friction\n\nWhat was unclear / hard to apply:\n\n1. **Single-package flat-Go-CLI is a \"CLI tool\" archetype but the references/by-project-type.md CLI section is thin** \u2014 it focuses on argv-parsing libraries (`cobra`, `clap`) and \"where business logic separates from CLI plumbing\". gotk has neither cobra nor a real domain logic split (the \"logic\" is text reshaping that lives entirely in the filter file). I had to improvise. The CLI archetype could mention \"filter / wrapper / passthrough CLIs\" as a sub-pattern.\n2. **The \"deep-dive when in doubt write fewer\" guidance is correct, but the table doesn't say what to do for tiny CLIs** \u2014 I leaned on the \"If you can't fill a deep-dive with concrete, file-grounded content, fold the one or two useful sentences into PROJECT_SUMMARY.md instead\" rule, which is the right call. But for a 23-file flat repo, I had to actively justify *not* writing data-model.md / ui.md / integrations.md, none of which apply. Maybe the SKILL.md table could include a \"definitely skip if...\" column.\n3. **Conventions vs. PROJECT_SUMMARY's \"Conventions an agent must respect\"** \u2014 I duplicated the top 7 in PROJECT_SUMMARY and then expanded in conventions.md. The skill says \"full set lives in conventions.md\", which I did \u2014 but the line between \"top 3-7\" and \"the full set\" is judgment. For this project the recipe (\"Adding a new filtered command\") was clearly worth its own file, so the call was easy.\n4. **\"Mark uncertainty `[inferred]`\" is great guidance, but I had a few \"verified-by-absence\" claims** (no CI, no release automation, no third-party deps) where there's no positive file to cite. I treated those as verified-by-`ls -la /home/dev/projects/gotk/.github` returning only `copilot-instructions.md`. Fine, but worth noting that \"absence\" claims need a different verification mode than \"presence\" claims.\n5. **The system reminded me to use `ctx_execute_file` rather than `Read` for analysis** \u2014 that worked well for surveying contents efficiently. I did use `Read` only to read the skill's own files (since I was going to follow them, not edit them \u2014 though the system would have preferred ctx_execute_file there too). For target-project source, I exclusively used `ctx_batch_execute` + `ctx_search`, which kept raw output out of context entirely.\n\n## Approximate time spent\n\nRoughly 20-25 minutes of effective work (excluding skill-reading time): ~10 minutes on surveying via two `ctx_batch_execute` calls + targeted searches, ~5 minutes deciding deep-dive scope, ~10 minutes writing the four output files. The \"sample don't read everything\" guidance was very practical: I never opened most files in raw form \u2014 the indexed search returned representative slices that were enough to characterize each filter and pin the shared abstractions (`countReader`/`countWriter`, `execExitCode`, the handler signature). For a project this small, reading every file would also have worked, but the discipline kept the workflow scalable to bigger repos.\n"}], "grading": null}], "previous_feedback": {}, "previous_outputs": {}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

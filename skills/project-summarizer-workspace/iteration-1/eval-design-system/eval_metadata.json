@@ -1,0 +1,7 @@
+{
+  "eval_id": "design-system",
+  "eval_name": "ts-ui-library",
+  "prompt": "Help me understand this codebase at ~/projects/design-system — I want to onboard another AI agent to make UI improvements.",
+  "project_path": "/home/dev/projects/design-system",
+  "assertions": []
+}

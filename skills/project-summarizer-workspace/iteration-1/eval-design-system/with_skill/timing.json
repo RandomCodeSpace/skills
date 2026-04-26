@@ -1,0 +1,6 @@
+{
+  "total_tokens": 102273,
+  "duration_ms": 338101,
+  "total_duration_seconds": 338.1,
+  "note": "Agent stalled mid-task on initial run; was resumed via SendMessage. This timing reflects the resumed portion that produced the files."
+}
