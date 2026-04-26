@@ -8,3 +8,6 @@ target/
 /tmp/
 *.asc
 *.gpg
+
+# skill-creator iteration artifacts (sibling to each skill, named <skill>-workspace/)
+*-workspace/
