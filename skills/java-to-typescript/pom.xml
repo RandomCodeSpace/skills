@@ -11,7 +11,8 @@
 
     <groupId>io.github.randomcodespace.ai</groupId>
     <artifactId>java-to-typescript</artifactId>
-    <version>0.1.0</version>
+    <!-- Starts at 0.0.0 so publish.yml's auto-patch-bump produces 0.0.1 as the first Maven Central release. -->
+    <version>0.0.0</version>
     <packaging>pom</packaging>
 
     <name>java-to-typescript</name>
