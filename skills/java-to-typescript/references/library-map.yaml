@@ -62,7 +62,7 @@ entries:
     gotchas:
       - { id: sec-method-level, summary: "@PreAuthorize annotations -> method-level checks via a guard helper; cannot rely on framework AOP.", severity: high }
       - { id: sec-csrf, summary: "Spring Security's CSRF token model -> don't replicate for stateless JWT APIs; document the change.", severity: medium }
-    category_ref: categories/di.md
+    category_ref: null  # no categories/security.md in M0; follow entry notes (jose-backed Express middleware + per-route guard helper)
     fidelity: { idiomatic: hand-rolled-middleware, high_fidelity: hand-rolled-middleware }
 
   - java: { groupId: org.springframework.boot, artifactId: spring-boot-starter-test, category: testing }
@@ -175,7 +175,7 @@ entries:
       primary: { name: cockatiel, notes: "@CircuitBreaker / @Retry -> cockatiel policies wrapping the call site. No annotation-style declaration." }
     gotchas:
       - { id: r4j-bulkhead, summary: "Semaphore bulkhead -> cockatiel bulkheadPolicy. ThreadPool bulkhead doesn't translate; redesign as worker pool if used.", severity: high }
-    category_ref: categories/di.md
+    category_ref: null  # no categories/resilience.md in M0; follow entry notes (cockatiel policies wrapping call sites)
     fidelity: { idiomatic: cockatiel, high_fidelity: cockatiel }
 
   - java: { groupId: com.google.guava, artifactId: guava, category: utility }
@@ -183,5 +183,5 @@ entries:
       primary: { name: native-and-lodash, notes: "ImmutableList -> readonly T[]; Multimap -> Map<K, V[]> wrapper; Cache -> keyv; Preconditions -> throw new Error." }
     gotchas:
       - { id: guava-cache, summary: "CacheBuilder.expireAfterAccess -> keyv with TTL; loading caches -> wrap with a memoize helper.", severity: medium }
-    category_ref: categories/di.md
+    category_ref: null  # no categories/utility.md in M0; follow entry notes (native + selective lodash; keyv for caches)
     fidelity: { idiomatic: native-and-lodash, high_fidelity: native-and-lodash }

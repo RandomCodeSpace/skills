@@ -227,7 +227,11 @@ async function writeGitignore(outDir: string): Promise<void> {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((e) => { console.error(e); process.exit(1); });
+  main().catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    process.stderr.write(msg + '\n');
+    process.exit(1);
+  });
 }
 
 async function main(): Promise<void> {
@@ -243,13 +247,13 @@ async function main(): Promise<void> {
     const outFile = path.join(values.repo, 'migration', 'analysis.json');
     await fs.mkdir(path.dirname(outFile), { recursive: true });
     await fs.writeFile(outFile, JSON.stringify(result, null, 2));
-    console.log(`wrote ${outFile}`);
+    process.stdout.write(`wrote ${outFile}\n`);
   } else if (sub === 'scaffold') {
     if (!values.plan) throw new Error('scaffold requires --plan <plan.json>');
     if (!values.out) throw new Error('scaffold requires --out <ts-repo>');
     const planJson = JSON.parse(await fs.readFile(values.plan, 'utf8')) as ScaffoldPlan;
     await scaffold(planJson, values.out);
-    console.log(`scaffolded ${values.out}`);
+    process.stdout.write(`scaffolded ${values.out}\n`);
   } else {
     throw new Error(`unknown subcommand: ${sub}`);
   }
