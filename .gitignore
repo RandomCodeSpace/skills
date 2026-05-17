@@ -3,6 +3,9 @@ target/
 .idea/
 *.iml
 .vscode/
+.project
+.settings/
+.classpath
 .DS_Store
 *.log
 /tmp/
