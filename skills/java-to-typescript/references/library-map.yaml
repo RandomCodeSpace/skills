@@ -1,0 +1,187 @@
+# library-map.yaml — Java → TypeScript dependency registry
+# Schema: see docs/superpowers/specs/2026-05-17-java-to-typescript-migration-skill-design.md §5.1
+# v0.1.0 (M0): 20 entries. Coverage expands in M1.
+
+default_picks:
+  di:               { name: tsyringe,                 why: "lightweight; decorators map well to @Inject/@Autowired" }
+  validation:       { name: zod,                      why: "runtime parse + zod-to-json-schema for OpenAPI" }
+  logging:          { name: pino,                     why: "structured by default; pino-pretty for dev only" }
+  http_server:      { name: express,                  why: "user-selected; composes with tsyringe + zod" }
+  http_client:      { name: undici,                   why: "native fetch backbone; air-gap friendly" }
+  orm:              { name: drizzle-orm,              why: "schema-as-code; type-safe; no codegen; no daemon" }
+  migrations:       { name: drizzle-kit,              why: "same toolchain as orm; SQL-first migrations" }
+  cache:            { name: keyv,                     why: "pluggable backends; MIT" }
+  decimal:          { name: decimal.js,               why: "BigDecimal parity" }
+  temporal:         { name: temporal-polyfill,        why: "LocalDate / ZonedDateTime parity; spec-track" }
+  date_idiomatic:   { name: native-Date,              why: "Instant parity; no dep" }
+  config:           { name: zod,                      why: "env validated by same schema lib used for HTTP" }
+  observability:    { name: "@opentelemetry/sdk-node", why: "Micrometer + OTel-java port" }
+  resilience:       { name: cockatiel,                why: "retry / circuit-breaker / bulkhead" }
+  testing_runner:   { name: vitest,                   why: "JUnit5 mapping; vi.mock for Mockito; unit + integration" }
+  testing_containers: { name: testcontainers,         why: "1:1 with Testcontainers-Java" }
+  json_idiomatic:   { name: native-JSON,              why: "default per type-fidelity policy" }
+  json_high_fid:    { name: class-transformer,        why: "Jackson polymorphism / custom serdes" }
+
+entries:
+
+  - java: { groupId: org.springframework.boot, artifactId: spring-boot-starter-web, category: framework }
+    ts:
+      primary: { name: express, notes: "Default per default_picks.http_server. tsyringe + zod compose cleanly." }
+      alternatives:
+        - { name: koa, when: "source uses heavy middleware chains and async generators" }
+        - { name: hono, when: "target runtime is Bun or Deno" }
+    gotchas:
+      - { id: sb-actuator, summary: "spring-boot-starter-actuator endpoints (/health, /metrics) are not auto-ported; add explicit routes wired to @opentelemetry/sdk-node.", severity: medium }
+      - { id: sb-static-resources, summary: "Spring's static resource handler (/static, /public) -> use express.static or equivalent.", severity: low }
+    category_ref: categories/di.md
+    fidelity: { idiomatic: express, high_fidelity: express }
+
+  - java: { groupId: org.springframework.boot, artifactId: spring-boot-starter-data-jpa, category: persistence }
+    ts:
+      primary: { name: drizzle-orm, notes: "Schema-as-code; type-safe. Map JPA entities -> drizzle table definitions; JpaRepository -> query module." }
+    gotchas:
+      - { id: jpa-lazy-loading, summary: "JPA lazy associations don't have a drop-in TS equivalent. Make joins explicit in the query module; document the cost.", severity: high }
+      - { id: jpa-cascade, summary: "@OneToMany(cascade = ALL) -> emulate via transaction wrapping in the query module; drizzle has no cascade declaration.", severity: high }
+    category_ref: categories/persistence.md
+    fidelity: { idiomatic: drizzle-orm, high_fidelity: drizzle-orm }
+
+  - java: { groupId: org.springframework.boot, artifactId: spring-boot-starter-validation, category: validation }
+    ts:
+      primary: { name: zod, notes: "Hand-translate Bean Validation annotations to zod schemas. One schema per DTO." }
+    gotchas:
+      - { id: bv-class-level, summary: "@AssertTrue on a method-level constraint -> zod refine().", severity: medium }
+      - { id: bv-groups, summary: "Validation groups (Default, Create, Update) -> distinct zod schemas per group; do not try to share via discriminated unions unless the API itself is polymorphic.", severity: medium }
+    category_ref: categories/validation.md
+    fidelity: { idiomatic: zod, high_fidelity: zod }
+
+  - java: { groupId: org.springframework.boot, artifactId: spring-boot-starter-security, category: security }
+    ts:
+      primary: { name: hand-rolled-middleware, notes: "No 1:1 TS framework. Build Express middleware backed by jose (JWT) + a per-route guard helper." }
+      alternatives:
+        - { name: passport, when: "OAuth2 / SAML flows; trade ergonomics for breadth" }
+    gotchas:
+      - { id: sec-method-level, summary: "@PreAuthorize annotations -> method-level checks via a guard helper; cannot rely on framework AOP.", severity: high }
+      - { id: sec-csrf, summary: "Spring Security's CSRF token model -> don't replicate for stateless JWT APIs; document the change.", severity: medium }
+    category_ref: null  # no categories/security.md in M0; follow entry notes (jose-backed Express middleware + per-route guard helper)
+    fidelity: { idiomatic: hand-rolled-middleware, high_fidelity: hand-rolled-middleware }
+
+  - java: { groupId: org.springframework.boot, artifactId: spring-boot-starter-test, category: testing }
+    ts:
+      primary: { name: vitest, notes: "Replaces JUnit 5; vi.mock for Mockito; expect API for AssertJ-style assertions." }
+    gotchas:
+      - { id: sbtest-mockmvc, summary: "MockMvc -> supertest against the Express app instance, no server boot needed.", severity: low }
+    category_ref: categories/testing.md
+    fidelity: { idiomatic: vitest, high_fidelity: vitest }
+
+  - java: { groupId: org.hibernate.orm, artifactId: hibernate-core, category: persistence }
+    ts:
+      primary: { name: drizzle-orm, notes: "See spring-boot-starter-data-jpa entry." }
+    gotchas:
+      - { id: hib-second-level-cache, summary: "Hibernate L2 cache (Ehcache/Caffeine) -> not auto-replicated; add keyv-backed cache wrapper at the query module.", severity: medium }
+    category_ref: categories/persistence.md
+    fidelity: { idiomatic: drizzle-orm, high_fidelity: drizzle-orm }
+
+  - java: { groupId: com.fasterxml.jackson.core, artifactId: jackson-databind, category: serialization }
+    ts:
+      primary:
+        name: native-json
+        notes: |
+          JSON.stringify / JSON.parse handle the 90% case. No runtime dep.
+          Loses: polymorphic type info (@JsonTypeInfo), custom (de)serializers,
+          date-format coercion.
+      alternatives:
+        - { name: class-transformer, when: "source uses @JsonProperty / @JsonCreator heavily AND high-fidelity policy is in scope" }
+    gotchas:
+      - { id: jackson-bigdecimal, summary: "Jackson serializes BigDecimal to JSON number; JSON.stringify on Decimal.js value emits {}. Force toString() on the boundary.", severity: high }
+      - { id: jackson-nested-generics, summary: "Jackson resolves Map<String, List<Foo>>; native JSON loses the Foo type. Wrap with Zod.parse at the boundary.", severity: medium }
+    category_ref: categories/validation.md
+    fidelity: { idiomatic: native-json, high_fidelity: class-transformer }
+
+  - java: { groupId: com.fasterxml.jackson.core, artifactId: jackson-core, category: serialization }
+    ts:
+      primary: { name: native-json, notes: "See jackson-databind." }
+    category_ref: categories/validation.md
+    fidelity: { idiomatic: native-json, high_fidelity: class-transformer }
+
+  - java: { groupId: org.slf4j, artifactId: slf4j-api, category: logging }
+    ts:
+      primary: { name: pino, notes: "Module-scoped child logger. LoggerFactory.getLogger(Foo.class) -> const log = base.child({ module: 'Foo' })." }
+    gotchas:
+      - { id: slf4j-mdc, summary: "MDC.put('userId', x) -> bind via pino child or AsyncLocalStorage. Don't rely on thread-local semantics.", severity: medium }
+    category_ref: categories/logging.md
+    fidelity: { idiomatic: pino, high_fidelity: pino }
+
+  - java: { groupId: ch.qos.logback, artifactId: logback-classic, category: logging }
+    ts:
+      primary: { name: pino, notes: "logback.xml appenders -> pino transports; XML config -> JSON object passed to pino()." }
+    category_ref: categories/logging.md
+    fidelity: { idiomatic: pino, high_fidelity: pino }
+
+  - java: { groupId: org.junit.jupiter, artifactId: junit-jupiter, category: testing }
+    ts:
+      primary: { name: vitest, notes: "@Test -> it(); @BeforeEach -> beforeEach; @ParameterizedTest -> it.each." }
+    category_ref: categories/testing.md
+    fidelity: { idiomatic: vitest, high_fidelity: vitest }
+
+  - java: { groupId: org.mockito, artifactId: mockito-core, category: testing }
+    ts:
+      primary: { name: vitest, notes: "vi.mock for module-level mocks; vi.fn for spies; vi.spyOn for partial. Mockito @Mock fields -> vi.mocked()." }
+    category_ref: categories/testing.md
+    fidelity: { idiomatic: vitest, high_fidelity: vitest }
+
+  - java: { groupId: org.assertj, artifactId: assertj-core, category: testing }
+    ts:
+      primary: { name: vitest, notes: "assertThat(x).isEqualTo(y) -> expect(x).toEqual(y). AssertJ fluent chains -> expect chains." }
+    category_ref: categories/testing.md
+    fidelity: { idiomatic: vitest, high_fidelity: vitest }
+
+  - java: { groupId: org.testcontainers, artifactId: testcontainers, category: testing }
+    ts:
+      primary: { name: testcontainers, notes: "1:1 mapping. PostgreSQLContainer -> @testcontainers/postgresql equivalent." }
+    category_ref: categories/testing.md
+    fidelity: { idiomatic: testcontainers, high_fidelity: testcontainers }
+
+  - java: { groupId: org.projectlombok, artifactId: lombok, category: utility }
+    ts:
+      primary: { name: drop, notes: "TS classes don't need @Data — public fields + structural typing replace getters/setters." }
+    gotchas:
+      - { id: lombok-builder, summary: "@Builder pattern -> use a plain factory function or zod schema with .parse(). Do not port Builder mechanically.", severity: medium }
+      - { id: lombok-slf4j, summary: "@Slf4j -> import { logger } and rename log.* calls.", severity: low }
+    category_ref: categories/logging.md
+    fidelity: { idiomatic: drop, high_fidelity: drop }
+
+  - java: { groupId: org.mapstruct, artifactId: mapstruct, category: utility }
+    ts:
+      primary: { name: hand-written-mappers, notes: "TS has no MapStruct equivalent worth introducing. Hand-write a mapper module per DTO ⇔ entity pair." }
+    gotchas:
+      - { id: mapstruct-zod, summary: "If the source and target both have zod schemas, use schema-to-schema transforms via .transform() instead of a separate mapper.", severity: low }
+    category_ref: categories/validation.md
+    fidelity: { idiomatic: hand-written-mappers, high_fidelity: hand-written-mappers }
+
+  - java: { groupId: jakarta.validation, artifactId: jakarta.validation-api, category: validation }
+    ts:
+      primary: { name: zod, notes: "See spring-boot-starter-validation." }
+    category_ref: categories/validation.md
+    fidelity: { idiomatic: zod, high_fidelity: zod }
+
+  - java: { groupId: org.hibernate.validator, artifactId: hibernate-validator, category: validation }
+    ts:
+      primary: { name: zod, notes: "See spring-boot-starter-validation." }
+    category_ref: categories/validation.md
+    fidelity: { idiomatic: zod, high_fidelity: zod }
+
+  - java: { groupId: io.github.resilience4j, artifactId: resilience4j-spring-boot3, category: resilience }
+    ts:
+      primary: { name: cockatiel, notes: "@CircuitBreaker / @Retry -> cockatiel policies wrapping the call site. No annotation-style declaration." }
+    gotchas:
+      - { id: r4j-bulkhead, summary: "Semaphore bulkhead -> cockatiel bulkheadPolicy. ThreadPool bulkhead doesn't translate; redesign as worker pool if used.", severity: high }
+    category_ref: null  # no categories/resilience.md in M0; follow entry notes (cockatiel policies wrapping call sites)
+    fidelity: { idiomatic: cockatiel, high_fidelity: cockatiel }
+
+  - java: { groupId: com.google.guava, artifactId: guava, category: utility }
+    ts:
+      primary: { name: native-and-lodash, notes: "ImmutableList -> readonly T[]; Multimap -> Map<K, V[]> wrapper; Cache -> keyv; Preconditions -> throw new Error." }
+    gotchas:
+      - { id: guava-cache, summary: "CacheBuilder.expireAfterAccess -> keyv with TTL; loading caches -> wrap with a memoize helper.", severity: medium }
+    category_ref: null  # no categories/utility.md in M0; follow entry notes (native + selective lodash; keyv for caches)
+    fidelity: { idiomatic: native-and-lodash, high_fidelity: native-and-lodash }

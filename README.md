@@ -7,6 +7,7 @@ A monorepo of [Claude Code](https://docs.claude.com/claude-code) / Agent SDK ski
 | Skill | Maven coordinates | What it does |
 |---|---|---|
 | [`gitlab-helper`](skills/gitlab-helper) | `io.github.randomcodespace.ai:gitlab-helper` | GitLab CI/CD, pipelines, runners, and API automation. Version-aware doc grounding + `glab`/`python-gitlab` automation. |
+| [`java-to-typescript`](skills/java-to-typescript) | `io.github.randomcodespace.ai:java-to-typescript` | Migrate a Java service (Spring Boot, Quarkus, Micronaut, Spring MVC) to TypeScript with four-phase orchestration, deterministic plumbing scripts, and contract-parity verification. Air-gap-friendly. |
 
 ## Using a skill
 

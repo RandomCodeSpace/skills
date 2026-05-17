@@ -3,6 +3,9 @@ target/
 .idea/
 *.iml
 .vscode/
+.project
+.settings/
+.classpath
 .DS_Store
 *.log
 /tmp/
@@ -11,3 +14,9 @@ target/
 
 # skill-creator iteration artifacts (sibling to each skill, named <skill>-workspace/)
 *-workspace/
+
+# java-to-typescript skill: TS scripts / evals build artifacts
+skills/java-to-typescript/node_modules/
+skills/java-to-typescript/dist/
+skills/java-to-typescript/.vitest-cache/
+skills/java-to-typescript/coverage/

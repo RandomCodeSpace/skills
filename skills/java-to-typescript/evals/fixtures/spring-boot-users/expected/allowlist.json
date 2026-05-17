@@ -1,0 +1,5 @@
+{
+  "headers": ["date", "x-request-id", "traceparent", "content-length"],
+  "bodyPaths": ["$.createdAt"],
+  "arrayKeys": {}
+}
