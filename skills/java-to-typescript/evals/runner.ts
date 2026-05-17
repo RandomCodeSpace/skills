@@ -189,7 +189,7 @@ async function main(): Promise<void> {
   }
 
   if (evalChoice === 'E3' || evalChoice === 'all') {
-    const tsRepo = values['ts-repo'] ?? path.join(fixtureDir, 'sample', 'ts-port');
+    const tsRepo = values['ts-repo'] ?? path.join(fixtureDir, 'sample', 'ts-port', 'api');
     const tsExists = await fileExists(tsRepo);
     if (!tsExists) {
       process.stdout.write(`E3 ${fixtureName}: SKIP (no ts-port at ${tsRepo})\n`);
