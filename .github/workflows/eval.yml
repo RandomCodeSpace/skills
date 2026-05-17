@@ -1,0 +1,36 @@
+name: eval
+
+on:
+  pull_request:
+    paths:
+      - 'skills/java-to-typescript/**'
+      - '.github/workflows/eval.yml'
+  workflow_dispatch:
+
+jobs:
+  unit-and-e1:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skills/java-to-typescript
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: skills/java-to-typescript/package-lock.json
+
+      - name: Install dev deps
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (scripts/lib + scripts)
+        run: npx vitest run scripts/
+
+      - name: E1 (analyze accuracy) eval
+        run: npx vitest run evals/__tests__/runner.test.ts
