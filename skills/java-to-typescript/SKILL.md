@@ -35,7 +35,7 @@ Consult: `references/library-map.yaml`, `references/frameworks/*.md`.
 
 ### Phase 2 — Plan (hard user gate, diff preview)
 
-Ask the user via `AskUserQuestion` for:
+Ask the user (via your platform's interactive-prompt mechanism — `AskUserQuestion` in Claude Code; see `references/platform-adaptation.md` for Copilot CLI / Codex equivalents) for:
 
 - Migration mode (`full-rewrite | strangler-fig | module-by-module`) — consult `references/migration-modes.md`.
 - Target TS framework per Java module (Express default; Koa, Hono, Restify selectable) — consult `references/targets/*.md`.
@@ -44,7 +44,7 @@ Ask the user via `AskUserQuestion` for:
 - DI library (tsyringe default).
 - Validation library (zod default).
 
-For each entry in `analysis.json.unmappedDependencies`, ask the user via `AskUserQuestion` for a target. Do not auto-resolve. Do not call `context7`.
+For each entry in `analysis.json.unmappedDependencies`, ask the user (interactive prompt) for a target. Do not auto-resolve. Do not call `context7`.
 
 Write `<java-repo>/migration/plan.md` containing per-module decisions, dependency order, and a one-shot diff preview (per module: what gets created, what the projected `package.json` looks like, which Java files map to which TS files).
 
@@ -66,7 +66,7 @@ Order:
 
 5. Apply type-fidelity policy per `references/type-fidelity.md`. Deviations require a one-line `port-log.md` entry.
 
-6. Dispatch one subagent per independent module via `superpowers:subagent-driven-development` when the dependency graph permits parallelism.
+6. **Parallelize independent modules** when the dependency graph permits — use whatever subagent/worker dispatch your platform offers. Modules with no cross-edges to in-flight work can be ported concurrently; modules that depend on an unfinished sibling MUST wait. The skill itself does not bundle a subagent runner; orchestration is the platform's job. (See `references/platform-adaptation.md` for the per-platform mechanism: Claude Code subagents, Copilot CLI workers, Codex CLI parallel tasks. If your platform has no parallel-dispatch primitive, port sequentially — correctness is unaffected.)
 
 **Non-negotiable patterns** (from `references/type-fidelity.md` §7.3):
 - One handler per file.
