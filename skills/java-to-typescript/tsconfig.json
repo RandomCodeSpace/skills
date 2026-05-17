@@ -16,6 +16,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["scripts/**/*.ts", "evals/**/*.ts"],
+  "include": ["scripts/**/*.ts", "evals/**/*.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
