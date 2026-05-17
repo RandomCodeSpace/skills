@@ -111,6 +111,121 @@ function toArray<T>(v: T | T[] | undefined): T[] {
   return Array.isArray(v) ? v : [v];
 }
 
+export type ScaffoldPlan = {
+  packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
+  runtime: 'node' | 'bun' | 'deno';
+  rootName: string;
+  modules: {
+    path: string;
+    name: string;
+    tsFramework: 'express' | 'koa' | 'hono' | 'restify';
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  }[];
+};
+
+const SUPPORTED_PM = new Set(['npm', 'pnpm', 'yarn', 'bun']);
+const SUPPORTED_RUNTIME = new Set(['node', 'bun', 'deno']);
+const SUPPORTED_FRAMEWORK = new Set(['express', 'koa', 'hono', 'restify']);
+
+export async function scaffold(plan: ScaffoldPlan, outDir: string): Promise<void> {
+  if (!SUPPORTED_PM.has(plan.packageManager)) throw new Error(`unsupported packageManager: ${plan.packageManager}`);
+  if (!SUPPORTED_RUNTIME.has(plan.runtime)) throw new Error(`unsupported runtime: ${plan.runtime}`);
+  for (const m of plan.modules) {
+    if (!SUPPORTED_FRAMEWORK.has(m.tsFramework)) throw new Error(`unsupported tsFramework: ${m.tsFramework}`);
+  }
+  await fs.mkdir(outDir, { recursive: true });
+  await writeRootPackageJson(plan, outDir);
+  await writeTsconfigBase(outDir);
+  await writeGitignore(outDir);
+  for (const m of plan.modules) {
+    await fs.mkdir(path.join(outDir, m.path), { recursive: true });
+    await writeModulePackageJson(plan, m, outDir);
+    await writeModuleTsconfig(m, outDir);
+  }
+}
+
+async function writeRootPackageJson(plan: ScaffoldPlan, outDir: string): Promise<void> {
+  const root = {
+    name: plan.rootName,
+    private: true,
+    workspaces: plan.modules.map((m) => m.path),
+    scripts: {
+      test: 'vitest run',
+      typecheck: 'tsc --noEmit -p tsconfig.base.json',
+    },
+  };
+  await fs.writeFile(path.join(outDir, 'package.json'), JSON.stringify(root, null, 2) + '\n');
+}
+
+async function writeModulePackageJson(
+  plan: ScaffoldPlan,
+  m: ScaffoldPlan['modules'][number],
+  outDir: string
+): Promise<void> {
+  const pkg = {
+    name: m.name,
+    private: true,
+    type: 'module',
+    main: 'dist/index.js',
+    scripts: {
+      build: 'tsc',
+      start: plan.runtime === 'node' ? 'node dist/index.js' : `${plan.runtime} dist/index.js`,
+      test: 'vitest run',
+    },
+    dependencies: m.dependencies,
+    devDependencies: m.devDependencies,
+  };
+  await fs.writeFile(path.join(outDir, m.path, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
+}
+
+async function writeTsconfigBase(outDir: string): Promise<void> {
+  const base = {
+    compilerOptions: {
+      target: 'ES2022',
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      strict: true,
+      noUncheckedIndexedAccess: true,
+      exactOptionalPropertyTypes: true,
+      noImplicitOverride: true,
+      experimentalDecorators: true,
+      emitDecoratorMetadata: true,
+      useDefineForClassFields: false,
+      isolatedModules: true,
+      esModuleInterop: true,
+      forceConsistentCasingInFileNames: true,
+      skipLibCheck: false,
+      outDir: 'dist',
+      rootDir: 'src',
+    },
+  };
+  await fs.writeFile(path.join(outDir, 'tsconfig.base.json'), JSON.stringify(base, null, 2) + '\n');
+}
+
+async function writeModuleTsconfig(m: ScaffoldPlan['modules'][number], outDir: string): Promise<void> {
+  const tsc = {
+    extends: '../tsconfig.base.json',
+    include: ['src/**/*'],
+    exclude: ['dist', 'node_modules', '**/*.test.ts'],
+  };
+  await fs.writeFile(path.join(outDir, m.path, 'tsconfig.json'), JSON.stringify(tsc, null, 2) + '\n');
+}
+
+async function writeGitignore(outDir: string): Promise<void> {
+  const lines = [
+    'node_modules/',
+    'dist/',
+    '.vitest-cache/',
+    'coverage/',
+    '',
+    '# migration artifacts (skill-generated; never commit)',
+    'migration/',
+    '',
+  ];
+  await fs.writeFile(path.join(outDir, '.gitignore'), lines.join('\n'));
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((e) => { console.error(e); process.exit(1); });
 }
@@ -130,7 +245,11 @@ async function main(): Promise<void> {
     await fs.writeFile(outFile, JSON.stringify(result, null, 2));
     console.log(`wrote ${outFile}`);
   } else if (sub === 'scaffold') {
-    throw new Error('scaffold not yet implemented (Task 10)');
+    if (!values.plan) throw new Error('scaffold requires --plan <plan.json>');
+    if (!values.out) throw new Error('scaffold requires --out <ts-repo>');
+    const planJson = JSON.parse(await fs.readFile(values.plan, 'utf8')) as ScaffoldPlan;
+    await scaffold(planJson, values.out);
+    console.log(`scaffolded ${values.out}`);
   } else {
     throw new Error(`unknown subcommand: ${sub}`);
   }
