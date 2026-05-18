@@ -1,0 +1,22 @@
+[
+  {"query": "set up a ralph loop to keep claude working on this build overnight", "should_trigger": true},
+  {"query": "i want to run codex in a while loop until my spec is done — can you help wire that up", "should_trigger": true},
+  {"query": "how do i do that ralph wiggum trick where the agent keeps iterating from a fixed prompt", "should_trigger": true},
+  {"query": "give me a self-driving agentic loop for opencode against my monorepo so it just keeps porting files", "should_trigger": true},
+  {"query": "i need an autonomous agent loop where my AI builds out features from a spec file until everything passes — should work with claude OR aider", "should_trigger": true},
+  {"query": "is there a way to let an AI cli build my project unattended overnight, with proper stop conditions and logs?", "should_trigger": true},
+  {"query": "scaffold me a workspace where i can drop specs and have an LLM iterate against them until done — needs to support multiple cli backends", "should_trigger": true},
+  {"query": "we tried `while :; do cat PROMPT.md | amp; done` but it's burning api calls and never stops — is there a better pattern?", "should_trigger": true},
+  {"query": "the agent keeps drifting off the spec on long runs — we use a ralph-style loop, want something with better state files", "should_trigger": true},
+  {"query": "show me how to run gemini cli as a long-running coder against a goal file and a tickets directory", "should_trigger": true},
+  {"query": "help me fix this off-by-one bug in pagination.ts", "should_trigger": false},
+  {"query": "write me a github action that runs the linter on PR", "should_trigger": false},
+  {"query": "i need to refactor this 400-line function — can you suggest a split", "should_trigger": false},
+  {"query": "how do i set up claude code with a custom system prompt for my team", "should_trigger": false},
+  {"query": "summarize this codebase for onboarding a new engineer", "should_trigger": false},
+  {"query": "review this PR for security issues", "should_trigger": false},
+  {"query": "what's the difference between claude opus and sonnet for coding tasks", "should_trigger": false},
+  {"query": "configure a pre-commit hook to run ruff on python files", "should_trigger": false},
+  {"query": "translate this java service to typescript", "should_trigger": false},
+  {"query": "i want to leave my AI agent running for hours on a build — is there a safe way to bound the run and resume if i kill it midway", "should_trigger": true}
+]

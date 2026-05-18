@@ -1,0 +1,40 @@
+{
+  "skill_name": "ralph-loop",
+  "evals": [
+    {
+      "id": 0,
+      "name": "setup-overnight-claude-loop",
+      "prompt": "I want to leave my Claude Code session running overnight on this Python project. The spec is to build out a small REST CRUD service for `todos` with sqlite — about 8 endpoints, validation, tests, and a Dockerfile. I have specs/01-todos.md ready but no scaffolding around it. Help me set up a Ralph-style loop that drives Claude to keep building until everything's done, but don't let it burn through my entire daily message budget.",
+      "expected_output": "Walks through: confirm goal/CLI/budget, run init.py with --adapter claude (default), move existing spec into .ralph/specs/, dry-run, then start. Calls out the LLM-call-minimizing defaults (max_iterations=20, iteration_timeout_seconds=1800), the DONE/STOP/PAUSE controls, and the initial git checkpoint. Does NOT invoke other skills.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "switch-to-codex-cli",
+      "prompt": "I already have a .ralph/ workspace set up but the team wants to switch from Claude Code to OpenAI Codex CLI. What do I change?",
+      "expected_output": "Identifies that only .ralph/config.json's `command` field needs to change to something like [\"codex\", \"exec\", \"{prompt}\"], and that `stdin_from_prompt` stays false. Mentions running `--dry-run` to verify. Optionally points at references/cli-adapters.md for the exact incantation.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "diagnose-runaway-loop",
+      "prompt": "My ralph loop ran 18 iterations overnight on a simple bug fix and didn't write DONE. Every iteration takes 12 minutes and looks like it's mostly reading files. Help me figure out what's wrong.",
+      "expected_output": "Walks through the anti-patterns playbook for runaway LLM consumption: check ticket size (probably too small), check whether plan.md / gotchas.md / specs/ are present and good, check that PROMPT.md's efficiency rules survived prompt rot, inspect a recent iter-*.out to see what the agent actually did. Recommends lowering max_iterations further, batching reads, or splitting into multiple shorter loops.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "parallel-mode-for-typescript-port",
+      "prompt": "I have a Go service I'm porting to TypeScript, file by file, about 60 files. Could ralph loop parallelize across multiple workers so I don't have to wait for one giant loop?",
+      "expected_output": "Confirms this is a good fit (fan-out shape, mostly disjoint files), walks through bootstrapping two workspaces, sharing specs/ via symlink or copy, partitioning the 60 files between workers, running on separate branches with auto_commit, and merging at the end. Flags that LLM costs double — speedup is wall-clock only.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "missing-or-vague-spec",
+      "prompt": "I want to set up a ralph loop to 'modernize' my Express app — clean up callbacks, add types, that kind of thing. Where do I start?",
+      "expected_output": "Pushes back on the spec quality before doing anything else. 'Modernize' is unverifiable; the loop will drift. Walks the user through writing concrete acceptance criteria (e.g., 'every route handler uses async/await with no callback nesting'; 'tsc --strict exits 0'; 'no any types in src/'). Only then offers to scaffold. Cites SKILL.md's 'spec quality is paid up front' principle.",
+      "files": []
+    }
+  ]
+}
