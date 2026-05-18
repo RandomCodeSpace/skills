@@ -12,7 +12,7 @@
     <groupId>io.github.randomcodespace.ai.skills</groupId>
     <artifactId>ralph-loop</artifactId>
     <!-- Starts at 0.0.0 so publish.yml's auto-patch-bump produces 0.0.1 as the first Maven Central release. -->
-    <version>0.0.0</version>
+    <version>0.0.1</version>
     <packaging>pom</packaging>
 
     <name>ralph-loop</name>
