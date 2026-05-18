@@ -127,7 +127,7 @@ jobs:
             if [ -z "$notes" ]; then
               notes="- Initial release of ${skill} ${version}"
             fi
-            body=$(printf '## %s %s\n\nPublished to Maven Central:\n```\nio.github.randomcodespace.ai:%s:%s\n```\n\n### Changes\n%s\n' \
+            body=$(printf '## %s %s\n\nPublished to Maven Central:\n```\nio.github.randomcodespace.ai.skills:%s:%s\n```\n\n### Changes\n%s\n' \
               "$skill" "$version" "$skill" "$version" "$notes")
             gh release create "$tag" \
               --title "${skill} ${version}" \

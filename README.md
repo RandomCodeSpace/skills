@@ -6,9 +6,9 @@ A monorepo of [Claude Code](https://docs.claude.com/claude-code) / Agent SDK ski
 
 | Skill | Maven coordinates | What it does |
 |---|---|---|
-| [`gitlab-helper`](skills/gitlab-helper) | `io.github.randomcodespace.ai:gitlab-helper` | GitLab CI/CD, pipelines, runners, and API automation. Version-aware doc grounding + `glab`/`python-gitlab` automation. |
-| [`java-to-typescript`](skills/java-to-typescript) | `io.github.randomcodespace.ai:java-to-typescript` | Migrate a Java service (Spring Boot, Quarkus, Micronaut, Spring MVC) to TypeScript with four-phase orchestration, deterministic plumbing scripts, and contract-parity verification. Air-gap-friendly. |
-| [`ralph-loop`](skills/ralph-loop) | `io.github.randomcodespace.ai:ralph-loop` | Standalone, host-agnostic Ralph-loop driver — run any AI coding CLI (Claude Code, Codex, OpenCode, Gemini, Aider, Amp, Copilot, …) in a self-driving loop against a file-state workspace. Tuned for minimum LLM-call burn. Stdlib-only Python; no internet; no cross-skill deps. |
+| [`gitlab-helper`](skills/gitlab-helper) | `io.github.randomcodespace.ai.skills:gitlab-helper` | GitLab CI/CD, pipelines, runners, and API automation. Version-aware doc grounding + `glab`/`python-gitlab` automation. |
+| [`java-to-typescript`](skills/java-to-typescript) | `io.github.randomcodespace.ai.skills:java-to-typescript` | Migrate a Java service (Spring Boot, Quarkus, Micronaut, Spring MVC) to TypeScript with four-phase orchestration, deterministic plumbing scripts, and contract-parity verification. Air-gap-friendly. |
+| [`ralph-loop`](skills/ralph-loop) | `io.github.randomcodespace.ai.skills:ralph-loop` | Standalone, host-agnostic Ralph-loop driver — run any AI coding CLI (Claude Code, Codex, OpenCode, Gemini, Aider, Amp, Copilot, …) in a self-driving loop against a file-state workspace. Tuned for minimum LLM-call burn. Stdlib-only Python; no internet; no cross-skill deps. |
 
 ## Using a skill
 
@@ -23,7 +23,7 @@ cp -r skills/skills/gitlab-helper ~/.claude/skills/
 **2. From Maven Central (recommended for CI/air-gapped distribution):**
 ```bash
 mvn dependency:copy \
-  -Dartifact=io.github.randomcodespace.ai:gitlab-helper:0.1.0 \
+  -Dartifact=io.github.randomcodespace.ai.skills:gitlab-helper:0.1.0 \
   -DoutputDirectory=./tmp
 unzip -o tmp/gitlab-helper-0.1.0.jar -d ~/.claude/skills/gitlab-helper
 ```
@@ -78,7 +78,7 @@ The workflow expects these secrets on the `maven-central` environment (or repo-l
 
 ### Namespace verification
 
-`io.github.randomcodespace.ai` is auto-verifiable on Central Portal because it maps to the `RandomCodeSpace` GitHub organization. First publish: log in to [central.sonatype.com](https://central.sonatype.com), claim the `io.github.randomcodespace` namespace, follow the GitHub verification prompt (create a short-lived public repo with a specific name), then the `.ai` sub-namespace inherits automatically.
+`io.github.randomcodespace.ai.skills` is auto-verifiable on Central Portal because it maps to the `RandomCodeSpace` GitHub organization. First publish: log in to [central.sonatype.com](https://central.sonatype.com), claim the `io.github.randomcodespace` namespace, follow the GitHub verification prompt (create a short-lived public repo with a specific name), then the `.ai` sub-namespace inherits automatically.
 
 ## Local dry-run
 

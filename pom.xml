@@ -12,7 +12,7 @@
          never stages this pom into the upload bundle. Each skill module is
          fully self-contained. -->
 
-    <groupId>io.github.randomcodespace.ai</groupId>
+    <groupId>io.github.randomcodespace.ai.skills</groupId>
     <artifactId>skills-aggregator</artifactId>
     <version>0.0.0-LOCAL</version>
     <packaging>pom</packaging>

@@ -9,7 +9,7 @@
          parent pom. Copy this file when adding a new skill and change only
          artifactId / version / name / description / scm url. -->
 
-    <groupId>io.github.randomcodespace.ai</groupId>
+    <groupId>io.github.randomcodespace.ai.skills</groupId>
     <artifactId>ralph-loop</artifactId>
     <!-- Starts at 0.0.0 so publish.yml's auto-patch-bump produces 0.0.1 as the first Maven Central release. -->
     <version>0.0.0</version>

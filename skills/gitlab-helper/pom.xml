@@ -9,7 +9,7 @@
          parent pom. Copy this file when adding a new skill and change only
          artifactId / version / name / description / scm url. -->
 
-    <groupId>io.github.randomcodespace.ai</groupId>
+    <groupId>io.github.randomcodespace.ai.skills</groupId>
     <artifactId>gitlab-helper</artifactId>
     <version>0.1.5</version>
     <packaging>pom</packaging>

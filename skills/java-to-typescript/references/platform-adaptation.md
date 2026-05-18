@@ -22,11 +22,11 @@ You have everything you need natively. The skill's `SKILL.md` mentions `AskUserQ
 
 ## Read this if you're running on Copilot CLI
 
-The skill ships as a Maven artifact (`io.github.randomcodespace.ai:java-to-typescript`). Install it into your Copilot CLI plugin directory:
+The skill ships as a Maven artifact (`io.github.randomcodespace.ai.skills:java-to-typescript`). Install it into your Copilot CLI plugin directory:
 
 ```bash
 mvn dependency:copy \
-  -Dartifact=io.github.randomcodespace.ai:java-to-typescript:0.0.1 \
+  -Dartifact=io.github.randomcodespace.ai.skills:java-to-typescript:0.0.1 \
   -DoutputDirectory=./tmp
 unzip -o tmp/java-to-typescript-0.0.1-bin.zip -d ~/.copilot/plugins/
 ```
@@ -70,7 +70,7 @@ To remain standalone, the skill avoids:
 | Platform | Install command |
 |---|---|
 | **From source** | `git clone` + `cp -r skills/java-to-typescript ~/.claude/skills/` (or equivalent skill dir) |
-| **Maven Central** | `mvn dependency:copy -Dartifact=io.github.randomcodespace.ai:java-to-typescript:<version> -DoutputDirectory=./tmp && unzip tmp/java-to-typescript-<version>-bin.zip -d <plugin-dir>` |
+| **Maven Central** | `mvn dependency:copy -Dartifact=io.github.randomcodespace.ai.skills:java-to-typescript:<version> -DoutputDirectory=./tmp && unzip tmp/java-to-typescript-<version>-bin.zip -d <plugin-dir>` |
 | **Air-gapped enterprise** | Mirror the artifact to your internal Maven repo (Artifactory / Nexus); the skill bundle is a self-contained zip with vendored dependencies — no npm registry needed at install time |
 
 The bundle is the same zip on every platform. Tool-name shims live in the host's adapter layer, not in the skill.
