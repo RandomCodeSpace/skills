@@ -81,29 +81,69 @@ jobs:
           OSS_NEXUS_PASS: ${{ secrets.OSS_NEXUS_PASS }}
           SKILLS: ${{ steps.detect.outputs.skills }}
         run: |
-          set -e
+          # NOTE: deliberately NO `set -e` — we want the loop to continue
+          # past a failure of one skill so the others still get a chance
+          # to publish. We track failures separately and fail the step
+          # at the end if any individual skill failed.
           PUBLISHED=""
+          FAILED=""
           for skill in $SKILLS; do
             module="skills/${skill}"
             if [ ! -f "${module}/pom.xml" ]; then
               echo "::warning::No pom.xml for ${skill} — skipping"
               continue
             fi
+
             CURRENT=$(mvn -q -f "${module}/pom.xml" help:evaluate \
               -Dexpression=project.version -DforceStdout)
+            if [ -z "$CURRENT" ]; then
+              echo "::error::could not read current version for ${skill}"
+              FAILED="${FAILED}${skill}:version-read "
+              continue
+            fi
             IFS=. read -r MAJ MIN PAT <<<"${CURRENT}"
             NEW="${MAJ}.${MIN}.$((PAT + 1))"
+
             echo "::group::Publishing ${skill} ${CURRENT} -> ${NEW}"
-            mvn -B -ntp -pl "${module}" versions:set \
-              -DnewVersion="${NEW}" -DgenerateBackupPoms=false
-            mvn -B -ntp -pl "${module}" -am -Prelease deploy
+            if ! mvn -B -ntp -pl "${module}" versions:set \
+                  -DnewVersion="${NEW}" -DgenerateBackupPoms=false; then
+              echo "::error::versions:set failed for ${skill}"
+              FAILED="${FAILED}${skill}:versions-set "
+              git checkout -- "${module}/pom.xml" 2>/dev/null || true
+              echo "::endgroup::"
+              continue
+            fi
+
+            if mvn -B -ntp -pl "${module}" -am -Prelease deploy; then
+              PUBLISHED="${PUBLISHED}${skill}:${NEW} "
+              echo "::notice title=Published::${skill} ${NEW}"
+            else
+              FAILED="${FAILED}${skill}:${NEW} "
+              echo "::error title=Deploy failed::${skill} ${NEW}"
+              # revert the version bump so we don't commit a version
+              # that never actually shipped
+              git checkout -- "${module}/pom.xml" 2>/dev/null || true
+            fi
             echo "::endgroup::"
-            PUBLISHED="${PUBLISHED}${skill}:${NEW} "
           done
+
           echo "published=${PUBLISHED}" >> "$GITHUB_OUTPUT"
+          echo "failed=${FAILED}" >> "$GITHUB_OUTPUT"
+
+          echo "Published: ${PUBLISHED:-(none)}"
+          echo "Failed:    ${FAILED:-(none)}"
+
+          # Fail the step (red badge) if any skill failed — but only
+          # AFTER attempting every skill. Downstream steps use
+          # if:always() so successful publishes still get released.
+          if [ -n "${FAILED}" ]; then
+            exit 1
+          fi
 
       - name: Create GitHub release for each published skill
-        if: steps.publish.outputs.published != ''
+        # always() so that a partial-failure of the publish step (some
+        # skills succeeded, some failed) still releases the successful ones.
+        if: always() && steps.publish.outputs.published != ''
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISHED: ${{ steps.publish.outputs.published }}
@@ -138,7 +178,9 @@ jobs:
           done
 
       - name: Commit version bumps
-        if: steps.detect.outputs.skills != ''
+        # always() so that the successful skills' version bumps still
+        # land in the repo even when some other skill failed to publish.
+        if: always() && steps.detect.outputs.skills != ''
         run: |
           set -e
           if git diff --quiet -- 'skills/*/pom.xml'; then
