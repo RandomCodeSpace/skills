@@ -15,6 +15,9 @@ target/
 # skill-creator iteration artifacts (sibling to each skill, named <skill>-workspace/)
 *-workspace/
 
+# Claude Code session worktree directories
+.claude/worktrees/
+
 # java-to-typescript skill: TS scripts / evals build artifacts
 skills/java-to-typescript/node_modules/
 skills/java-to-typescript/dist/
