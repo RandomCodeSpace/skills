@@ -1,9 +1,10 @@
 # Parallel mode — multiple workers, same loop
 
-The driver is intentionally single-process. For embarrassingly-parallel
-work (large ticket queue, mostly independent tickets), you can run
-multiple drivers in parallel — each is a worker against the same
-project but with its own workspace and (optionally) its own branch.
+The default driver is single-worker. For embarrassingly-parallel work
+(large ticket queue, mostly independent tickets), the parent driver can
+spawn supervised subagents — child Ralph workers against the same project
+with their own workspace and (optionally) their own branch. You can still
+run workers manually if you need custom process supervision.
 
 This is opt-in. The default Ralph loop is single-worker. Use parallel
 mode only when you've watched a single-worker loop, understand its
@@ -54,17 +55,41 @@ per-worker so workers don't race on file writes.
 
 ## Walkthrough
 
-### 1. Bootstrap two workspaces
+### 1. Prefer the built-in supervisor
 
-```bash
-python ~/.claude/skills/ralph-loop/scripts/init.py \
-  --workspace .ralph-worker-1 --adapter claude
+In the parent `.ralph/config.json`:
 
-python ~/.claude/skills/ralph-loop/scripts/init.py \
-  --workspace .ralph-worker-2 --adapter claude
+```json
+{
+  "subagents": {
+    "count": 2,
+    "workspace_root": ".ralph/subagents",
+    "git_branch_prefix": "ralph/worker"
+  }
+}
 ```
 
-### 2. Share the specs
+Then launch:
+
+```bash
+python /path/to/ralph-loop/scripts/ralph.py --subagents 2
+```
+
+The parent prepares `.ralph/subagents/agent-1/` and `agent-2/`, writes
+worker configs, starts both child `ralph.py` processes, and logs
+supervisor events to `.ralph/log/events.jsonl`.
+
+### 2. Manual fallback: bootstrap two workspaces
+
+```bash
+python /path/to/ralph-loop/scripts/init.py \
+  --workspace .ralph-worker-1 --adapter copilot
+
+python /path/to/ralph-loop/scripts/init.py \
+  --workspace .ralph-worker-2 --adapter copilot
+```
+
+### 3. Share the specs
 
 ```bash
 # Move the canonical specs into one place and symlink the others.
@@ -77,7 +102,7 @@ ln -s ../.ralph-specs .ralph-worker-2/specs
 Or just keep two independent copies and accept that you may need to
 re-sync if specs evolve mid-run.
 
-### 3. Partition the tickets
+### 4. Partition the tickets
 
 Easiest: have one worker handle tickets `0001-0099`, the other handle
 `0100-0199`. Each worker's PROMPT.md needs a one-line note:
@@ -91,7 +116,7 @@ Easiest: have one worker handle tickets `0001-0099`, the other handle
 You can also slice by directory or feature instead of by ticket ID,
 depending on the project shape.
 
-### 4. Run on separate branches
+### 5. Run on separate branches
 
 In each worker's `config.json`:
 
@@ -106,21 +131,21 @@ In each worker's `config.json`:
 The driver creates the branch and commits per iteration so you can
 merge or rebase between workers later.
 
-### 5. Launch in parallel
+### 6. Launch manual workers in parallel
 
 ```bash
 # Two separate terminals (or use `&` / a process supervisor).
-python ~/.claude/skills/ralph-loop/scripts/ralph.py \
+python /path/to/ralph-loop/scripts/ralph.py \
   --config .ralph-worker-1/config.json &
 
-python ~/.claude/skills/ralph-loop/scripts/ralph.py \
+python /path/to/ralph-loop/scripts/ralph.py \
   --config .ralph-worker-2/config.json &
 ```
 
 Each writes to its own logs, plan, gotchas. Each respects its own
 DONE/STOP/PAUSE markers.
 
-### 6. Merge results
+### 7. Merge results
 
 When both finish (or one finishes and you `STOP` the other), merge:
 

@@ -32,15 +32,31 @@ from typing import Dict, List, Optional
 #   {iter}          — current 1-indexed iteration number
 #   {workspace}     — path to .ralph/
 ADAPTERS: Dict[str, Dict] = {
+    "copilot": {
+        "command": [
+            sys.executable,
+            "-c",
+            (
+                "import sys; "
+                "sys.stderr.write('Edit .ralph/config.json command to your "
+                "Copilot coding-agent entrypoint or wrapper.\\n'); "
+                "sys.exit(1)"
+            ),
+        ],
+        "stdin_from_prompt": False,
+        "note": "Copilot coding-agent placeholder. Configure your local "
+                "Copilot agent/wrapper command; this is intentionally not "
+                "the shell-suggestion helper.",
+    },
     "claude": {
         "command": ["claude", "-p", "{prompt}"],
         "stdin_from_prompt": False,
-        "note": "Claude Code CLI. `claude -p '<prompt>'` runs once and exits.",
+        "note": "Claude-compatible one-shot command. Adjust for your installed CLI.",
     },
     "codex": {
         "command": ["codex", "exec", "{prompt}"],
         "stdin_from_prompt": False,
-        "note": "OpenAI Codex CLI. `codex exec '<prompt>'` runs non-interactively.",
+        "note": "Codex-compatible one-shot command. Adjust for your installed CLI.",
     },
     "opencode": {
         "command": ["opencode", "run", "{prompt}"],
@@ -57,12 +73,6 @@ ADAPTERS: Dict[str, Dict] = {
         "stdin_from_prompt": False,
         "note": "Aider. Reads prompt from a file; --yes-always auto-accepts edits.",
     },
-    "copilot": {
-        "command": ["gh", "copilot", "suggest", "-t", "shell", "{prompt}"],
-        "stdin_from_prompt": False,
-        "note": "GitHub Copilot CLI via `gh`. Note: copilot is interactive by "
-                "default; consider piping or wrapping. Adjust as needed.",
-    },
     "amp": {
         "command": ["amp"],
         "stdin_from_prompt": True,
@@ -70,7 +80,16 @@ ADAPTERS: Dict[str, Dict] = {
                 "`cat PROMPT.md | amp`.",
     },
     "generic": {
-        "command": ["sh", "-c", "echo 'replace this command with your CLI' && exit 1"],
+        "command": [
+            sys.executable,
+            "-c",
+            (
+                "import sys; "
+                "sys.stderr.write('Edit .ralph/config.json command to point "
+                "at your AI coding CLI.\\n'); "
+                "sys.exit(1)"
+            ),
+        ],
         "stdin_from_prompt": False,
         "note": "Placeholder — edit config.json `command` to point at your CLI.",
     },
@@ -121,10 +140,16 @@ def write_config(workspace: Path, adapter_key: str, force: bool,
         "max_wall_seconds": 4 * 60 * 60,
         "sleep_between_seconds": 1.0,
         "exit_code_failure_threshold": 5,
-        "iteration_timeout_seconds": None,
+        "iteration_timeout_seconds": 30 * 60,
         "auto_commit": False,
+        "initial_checkpoint": False,
         "git_branch": None,
         "env": {},
+        "subagents": {
+            "count": 0,
+            "workspace_root": str(workspace / "subagents"),
+            "git_branch_prefix": None,
+        },
     }
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
     cfg_path.write_text(json.dumps(config, indent=2) + "\n")
@@ -146,9 +171,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     p.add_argument("--workspace", default=".ralph",
                    help="workspace directory (default: .ralph)")
-    p.add_argument("--adapter", default="claude",
+    p.add_argument("--adapter", default="generic",
                    choices=sorted(ADAPTERS.keys()),
-                   help="which AI CLI to invoke each iteration (default: claude)")
+                   help="which AI CLI to invoke each iteration (default: generic)")
     p.add_argument("--max-iterations", type=int, default=20,
                    help="default max_iterations in config (default: 20 — "
                         "biased low to minimize LLM-call burn; raise if "
@@ -181,12 +206,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"  Prompt:   {ws / 'PROMPT.md'}")
     print(f"  Config:   {ws / 'config.json'}")
     print()
+    driver = script_root() / "ralph.py"
     print("Next steps:")
     print(f"  1. Write your spec(s) under {ws / 'specs'}/")
     print(f"  2. Edit {ws / 'PROMPT.md'} so the agent knows the goal "
           f"(or leave it generic and let the agent read specs/).")
-    print(f"  3. Verify the CLI works:  python scripts/ralph.py --dry-run")
-    print(f"  4. Start the loop:        python scripts/ralph.py")
+    print(f"  3. Verify the CLI works:  python {driver} --config {ws / 'config.json'} --dry-run")
+    print(f"  4. Start the loop:        python {driver} --config {ws / 'config.json'}")
     print()
     print("Stop conditions:")
     print(f"  - agent writes  {ws / 'DONE'}      → exit clean")

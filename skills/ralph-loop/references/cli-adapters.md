@@ -5,6 +5,11 @@ substitutes a few placeholders, runs it, captures the output. Any CLI
 that can be invoked non-interactively from a shell can drive a Ralph
 loop. This file shows how to wire each one.
 
+Keyword note for skill routing: this is a generic Ralph adapter guide,
+with Copilot coding agent as the primary named target. Codex, Claude,
+OpenCode, Gemini, Aider, Amp, and any one-shot coding command are also
+supported.
+
 ## How the substitution works
 
 The `command` field in `.ralph/config.json` is a list of argv strings.
@@ -37,26 +42,37 @@ Use these if the CLI you're driving has a hook that fires on
 
 ---
 
-## Claude Code
+## Copilot coding agent
+
+Aliases and trigger keywords: Copilot, GitHub Copilot, Copilot coding
+agent, copilot agent, copilot loop, copilot ralph.
+
+There is no universal local command for every Copilot environment. Do
+not use the shell-suggestion helper as the default coding loop: it is
+optimized for shell suggestions, not autonomous code edits. Point
+`command` at the Copilot coding-agent entrypoint or wrapper your
+environment provides.
 
 ```json
 {
-  "command": ["claude", "-p", "{prompt}"],
+  "command": ["./scripts/run-copilot-agent", "{prompt_file}", "{iter}"],
   "stdin_from_prompt": false
 }
 ```
 
 Notes:
 
-- `claude -p` is the non-interactive print-and-exit mode. It already
-  takes one full prompt and exits.
-- Authentication is whatever `claude` is already logged in as. Add
-  `"env": {"ANTHROPIC_API_KEY": "..."}` only if you specifically need
-  to override.
-- If you want extended thinking on, set the relevant env via `env` —
-  don't try to pass it as a flag from here.
+- Prefer `{prompt_file}` over `{prompt}` if your wrapper can read files;
+  it avoids argv length limits on large prompts.
+- The wrapper must run once, apply edits, write output, and exit. Ralph
+  handles the loop, logs, stop files, and subagent supervision.
+- Keep authentication outside `.ralph/config.json` unless the operator
+  explicitly wants env overrides.
 
 ## OpenAI Codex CLI
+
+Aliases and trigger keywords: Codex, OpenAI Codex, Codex CLI,
+`codex exec`, codex loop, codex ralph.
 
 ```json
 {
@@ -119,23 +135,25 @@ Notes:
 - Aider edits files in place using its own git semantics. Set the
   driver's `auto_commit: false` to avoid double-commits.
 
-## GitHub Copilot CLI
+## Claude-compatible command
+
+Aliases and trigger keywords: Claude, Claude Code, claude CLI,
+Ralph Wiggum plugin, `/ralph-loop`, Stop hook, completion promise.
 
 ```json
 {
-  "command": ["gh", "copilot", "suggest", "-t", "shell", "{prompt}"],
+  "command": ["claude", "-p", "{prompt}"],
   "stdin_from_prompt": false
 }
 ```
 
 Notes:
 
-- The Copilot CLI is currently optimized for **shell command
-  suggestion**, not free-form coding. Use it for loops that drive
-  shell-side automation, not end-to-end code-editing.
-- For coding tasks via Copilot, you'll likely want VS Code with
-  Copilot's coding agent in headless mode — wire that command in
-  `command` directly.
+- Claude is supported as another one-shot coding command, but this skill
+  should stay generic and should not assume Claude-specific hooks.
+- If you are copying ideas from Anthropic's Ralph Wiggum plugin, map the
+  Stop hook / completion-promise concept onto `.ralph/DONE`, `.ralph/STOP`,
+  and this standalone driver.
 
 ## Sourcegraph Amp (the original Ralph)
 

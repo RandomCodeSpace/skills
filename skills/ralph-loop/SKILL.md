@@ -1,6 +1,6 @@
 ---
 name: ralph-loop
-description: Use whenever the user wants to run an AI coding CLI (Claude Code, Codex, OpenCode, Copilot, Gemini, Aider, Amp, or any equivalent) in a long-running self-driving loop against a project — phrases like "ralph loop", "ralph wiggum loop", "run claude/codex in a loop", "autonomous agent loop", "self-driving agent", "agentic while loop", "let it cook", "let the agent build this overnight", "long-running coding agent", "spec-driven autonomous build", or any request to set up continuous, hands-off iteration where the AI keeps working until a goal file or stop signal is present. Also use when the user references Geoffrey Huntley's Ralph technique or the `while :; do … ; done` pattern with an AI CLI. Produces a `.ralph/` workspace (PROMPT.md, plan.md, gotchas.md, specs/, tickets/) plus a stdlib-only Python driver (`ralph.py`) that calls the user-chosen CLI each iteration, logs everything, and stops cleanly on `DONE`/`STOP`/max-iterations/wall-clock/exit-code thresholds. Standalone — no other skills, no internet, no shared libraries.
+description: Use whenever the user wants a generic Ralph loop for an AI coding agent, especially GitHub Copilot / Copilot coding agent, and also Codex, Claude, OpenCode, Gemini, Aider, Amp, or any equivalent one-shot AI coding command. Trigger phrases include "ralph loop", "ralph wiggum loop", "run copilot in a loop", "copilot ralph", "copilot coding agent loop", "run codex in a loop", "run any AI agent in a loop", "autonomous agent loop", "self-driving agent", "agentic while loop", "let it cook", "let the agent build this overnight", "long-running coding agent", "spec-driven autonomous build", or any request to set up continuous, hands-off iteration where the AI keeps working until a goal file or stop signal is present. Also use when the user references Geoffrey Huntley's Ralph technique or the `while :; do … ; done` / `while true` pattern with an AI CLI. Produces a `.ralph/` workspace (PROMPT.md, plan.md, gotchas.md, specs/, tickets/) plus a stdlib-only Python driver (`ralph.py`) that calls the user-chosen command each iteration, can supervise opt-in subagent worker loops, logs every step, and exits distinctly for `DONE`/`STOP`/max-iterations/wall-clock/exit-code thresholds. Standalone — no other skills, no internet, no shared libraries.
 ---
 
 # Ralph loop
@@ -13,7 +13,8 @@ restarted with fresh context. The filesystem is the agent's only memory.
 > Coined by Geoffrey Huntley as the "Ralph Wiggum" technique — `while :;
 > do cat PROMPT.md | <agent>; done`. This skill is that idea, hardened:
 > host-agnostic adapter for any CLI, proper stop conditions, structured
-> state files, gotchas log, ticket queue, safety rails.
+> state files, gotchas log, ticket queue, safety rails, and optional
+> supervised subagent workers.
 
 The skill is **standalone**. It does not call other skills, does not
 fetch from the internet, and depends only on Python 3.8+, `git` (optional),
@@ -29,10 +30,24 @@ Use it when the user wants:
 - Spec-driven autonomous build: "here are the specs, keep going until
   they're satisfied."
 - Overnight or background iteration against a well-defined goal.
-- A way to use Claude Code / Codex / OpenCode / Aider / Amp / Gemini /
-  Copilot in a loop that doesn't blow the context window.
+- A way to use Copilot coding agent, Codex, Claude, OpenCode, Aider,
+  Amp, Gemini, or any one-shot coding command in a loop that doesn't
+  blow the context window.
 - A simple, auditable loop with proper logs (not a custom orchestrator
   that hides what's happening).
+- Opt-in parallel "subagents" as child Ralph workers for disjoint ticket
+  queues or file partitions.
+
+Platform keyword coverage matters. Keep the skill generic, with Copilot
+as the primary named target:
+
+- **Copilot first:** `copilot`, `copilot coding agent`,
+  `copilot agent`, `copilot loop`, `copilot ralph`.
+- **Other supported agents:** `codex`, `codex exec`, `codex loop`,
+  `claude`, `claude code`, `opencode`, `gemini`, `aider`, `amp`.
+- **Upstream Ralph references:** `/ralph-loop`, `Ralph Wiggum plugin`,
+  `Stop hook`, `completion promise`. Map these to this generic driver;
+  do not turn the skill into a Claude-specific plugin.
 
 **Don't use it** for:
 
@@ -94,17 +109,19 @@ Before scaffolding, ask the user (only what you don't know):
 1. **What goal should the loop pursue?** Get a sentence. If they don't
    have a clear answer, stop and use whatever planning facility your host
    has to clarify — Ralph eats vague goals alive.
-2. **Which AI CLI drives the loop?** Default: `claude`. Other built-in
-   adapters: `codex`, `opencode`, `gemini`, `aider`, `copilot`, `amp`,
-   `generic` (for any command). See `references/cli-adapters.md`.
+2. **Which AI command drives the loop?** Default: `generic`. For Copilot,
+   use `copilot` and then point `.ralph/config.json` at the local Copilot
+   coding-agent entrypoint or wrapper. Other built-in adapters:
+   `codex`, `claude`, `opencode`, `gemini`, `aider`, `amp`. See
+   `references/cli-adapters.md`.
 3. **Where should `.ralph/` live?** Default: the current repo root.
    Confirm if the project is a monorepo or a non-repo directory.
 4. **Iteration budget?** Default: 20 iterations, 4-hour wall-clock cap,
    30-min per-iteration timeout. **Defaults are tuned to minimize LLM
    message consumption** — see "Minimizing LLM-call consumption" below.
    Raise only after a short run looks healthy.
-5. **Is this a git repo?** Strongly recommend `git init` first if not —
-   the driver auto-checkpoints before starting so you can recover.
+5. **Is this a git repo?** Strongly recommend `git init` first if not.
+   Commits and checkpoints are operator-controlled and opt-in.
 
 ---
 
@@ -113,12 +130,13 @@ Before scaffolding, ask the user (only what you don't know):
 From the target project's root:
 
 ```bash
-# When the skill is installed under ~/.claude/skills/ralph-loop/, run:
-python ~/.claude/skills/ralph-loop/scripts/init.py --adapter claude
+# Run the installed Ralph skill script from wherever your host installs it:
+python /path/to/ralph-loop/scripts/init.py --adapter generic
 
-# or for a different CLI:
-python ~/.claude/skills/ralph-loop/scripts/init.py --adapter codex
-# adapters: claude | codex | opencode | gemini | aider | copilot | amp | generic
+# For Copilot-centered usage, start with the Copilot adapter and then edit
+# .ralph/config.json to point at your Copilot coding-agent entrypoint/wrapper.
+python /path/to/ralph-loop/scripts/init.py --adapter copilot
+# adapters: copilot | generic | codex | claude | opencode | gemini | aider | amp
 ```
 
 This creates:
@@ -167,7 +185,7 @@ If you're not sure how to write one, see
 Before kicking off a real loop, dry-run:
 
 ```bash
-python ~/.claude/skills/ralph-loop/scripts/ralph.py --dry-run
+python /path/to/ralph-loop/scripts/ralph.py --dry-run
 ```
 
 This prints the rendered command that *would* run on iteration 1. Make
@@ -183,20 +201,23 @@ directly. The `command` field is a plain argv list with `{prompt}`,
 ## Step 5 — run the loop
 
 ```bash
-python ~/.claude/skills/ralph-loop/scripts/ralph.py
+python /path/to/ralph-loop/scripts/ralph.py
 ```
 
 What happens:
 
-1. The driver auto-checkpoints the repo (`git commit --allow-empty
-   -m "ralph: checkpoint before ralph loop start"`) if you're in a git
-   repo. Pass `--no-checkpoint` to skip.
-2. Each iteration: the driver renders the command, invokes the CLI,
-   captures stdout/stderr/exit-code to `.ralph/log/iter-NNNN.*`.
-3. Between iterations: the driver checks for `.ralph/DONE`,
+1. The driver adds the workspace directory (default `.ralph/`) to
+   `.gitignore` before doing any loop work. This keeps logs, state files,
+   and subagent workspaces out of accidental commits.
+2. No git commit happens by default. Use `--checkpoint` or set
+   `initial_checkpoint: true` if you explicitly want a pre-loop checkpoint.
+3. Each iteration: the driver renders the command, invokes the CLI,
+   captures stdout/stderr/exit-code to `.ralph/log/iter-NNNN.*`, and
+   appends a structured step event to `.ralph/log/events.jsonl`.
+4. Between iterations: the driver checks for `.ralph/DONE`,
    `.ralph/STOP`, `.ralph/PAUSE`, iteration cap, wall-clock cap, and
    consecutive-failure threshold.
-4. The loop ends cleanly when the agent writes `.ralph/DONE` or any
+5. The loop ends cleanly when the agent writes `.ralph/DONE` or any
    stop condition fires.
 
 You can watch progress live:
@@ -226,6 +247,18 @@ Plus signals:
 These are deliberately blunt and file-based so any operator (or another
 script) can drive them without going through Python.
 
+Exit codes are intentionally distinct:
+
+| Code | Meaning |
+|------|---------|
+| `0`  | `.ralph/DONE` / goal achieved. |
+| `20` | `.ralph/STOP` / operator stop. |
+| `21` | Max iterations reached. |
+| `22` | Wall-clock cap reached. |
+| `23` | Consecutive-failure threshold reached, including timeouts. |
+| `24` | One or more supervised subagents failed. |
+| `130` | Interrupted by Ctrl-C. |
+
 ---
 
 ## Step 7 — review and decide
@@ -236,8 +269,9 @@ When the loop ends, review:
 2. **`.ralph/gotchas.md`** — what it learned the hard way. These often
    surface real bugs in the spec or environment.
 3. **`.ralph/tickets/`** — what's left, if anything.
-4. **`git log --oneline`** since the checkpoint — what changed in the
-   codebase. Bisect any iteration that looks suspicious.
+4. **`git diff` / `git status`** — what changed in the codebase. If you
+   explicitly enabled checkpointing or `auto_commit`, also inspect
+   `git log --oneline`.
 5. **`.ralph/log/iter-*.err`** — if there were failed iterations,
    read the errs to see whether the CLI itself was crashing.
 
@@ -254,20 +288,54 @@ in `scripts/init.py` covers:
 
 | Adapter   | Command template                                  | Notes |
 |-----------|---------------------------------------------------|-------|
-| `claude`  | `claude -p {prompt}`                              | Default. |
-| `codex`   | `codex exec {prompt}`                             | OpenAI Codex CLI. |
+| `copilot` | operator-provided Copilot coding-agent wrapper    | Primary target; not the shell-suggestion helper. |
+| `generic` | placeholder                                       | Default. Edit `command` to anything. |
+| `codex`   | `codex exec {prompt}`                             | Codex-compatible one-shot command. |
+| `claude`  | Claude-compatible one-shot command                | Supported, not the default. |
 | `opencode`| `opencode run {prompt}`                           | |
 | `gemini`  | `gemini -p {prompt}`                              | |
 | `aider`   | `aider --message-file {prompt_file} --yes-always` | Reads prompt from a file; auto-accepts edits. |
-| `copilot` | `gh copilot suggest -t shell {prompt}`            | Copilot CLI; may need wrapping for full-coding behavior. |
 | `amp`     | `amp` (prompt piped on stdin)                     | The original Ralph invocation. |
-| `generic` | placeholder                                       | Edit `command` to anything. |
 
 For any other CLI: edit `command` in `.ralph/config.json`. The driver
 substitutes `{prompt}` / `{prompt_file}` / `{iter}` / `{workspace}` into
 each argv entry, and optionally pipes the prompt on stdin if
 `stdin_from_prompt: true`. See `references/cli-adapters.md` for
 worked examples per CLI.
+
+---
+
+## Subagents
+
+Ralph subagents are supervised child Ralph workers, not host-specific
+chat-tool subagents. The parent process prepares per-worker workspaces under
+`.ralph/subagents/agent-N/`, writes worker configs with `subagents.count = 0`
+to prevent recursion, starts each worker as a child `ralph.py --config ...`
+process, and records lifecycle events in `.ralph/log/events.jsonl`.
+
+Use them only for fan-out work where tickets or file ownership are disjoint:
+
+```bash
+python /path/to/ralph-loop/scripts/ralph.py --subagents 3
+```
+
+or configure:
+
+```json
+"subagents": {
+  "count": 3,
+  "workspace_root": ".ralph/subagents",
+  "git_branch_prefix": "ralph/agent"
+}
+```
+
+Each worker inherits the parent CLI command, prompt discipline, timeout,
+iteration cap, and `auto_commit` setting. The parent supervises child exit
+codes and writes `.ralph/log/subagents-summary.json` when they finish.
+
+Subagents do not magically coordinate conflicting edits. Partition tickets,
+directories, or files before launching them; use `references/parallel-mode.md`
+for the full workflow.
 
 ---
 
@@ -318,16 +386,18 @@ Rules of thumb:
 
 Built in:
 
-- **Initial git checkpoint** so you can `git reset --hard` back to the
-  pre-loop state if things go off the rails.
-- **Iteration cap** (default 50) so a runaway loop has a hard ceiling.
+- **`.gitignore` protection**: the active workspace directory is added to
+  `.gitignore` when the loop starts, before logs or subagent state grow.
+- **No commits by default.** Use `--checkpoint`, `initial_checkpoint: true`,
+  or `auto_commit: true` only when the operator explicitly wants commits.
+- **Iteration cap** (default 20) so a runaway loop has a hard ceiling.
 - **Wall-clock cap** (default 4 hours) so abandoned loops die.
 - **Consecutive-failure threshold** (default 5) so a CLI that's broken
-  doesn't waste a budget.
+  doesn't waste a budget. Timeouts count as failures.
 - **Per-iteration timeout** (configurable) so a hung CLI doesn't stall
   the loop.
-- **No auto-commit by default.** Set `auto_commit: true` in the config
-  if you want a commit per iteration (gives you fine-grained bisect).
+- **Structured event log**: every driver step appends a JSON object to
+  `.ralph/log/events.jsonl`.
 - **No network calls in the driver itself.** Everything the agent does
   goes through its own configured tools.
 

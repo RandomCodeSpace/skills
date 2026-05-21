@@ -212,6 +212,10 @@ iteration can't accidentally break.
 If you spot something legitimately bad outside the ticket, create a new
 ticket for it. Don't fix it now.
 
+If you are running as a Ralph subagent, obey the `Subagent assignment`
+section appended to this prompt. Prefer disjoint files, record blockers
+instead of waiting on another worker, and do not mark parent-level DONE.
+
 ---
 
 ## What "best effort" looks like inside one iteration
@@ -248,8 +252,8 @@ count.
   fetch from the internet, don't use it.
 - No interactive prompts. The CLI driving you is non-interactive; if
   something needs human input, write a ticket about it and exit.
-- No commits unless `auto_commit` is set in the config. Just edit files —
-  the loop handles checkpointing.
+- No commits unless `auto_commit` is set in the config. Just edit files.
+  Checkpoints are operator-controlled.
 - Don't edit `.ralph/config.json`. The operator owns that.
 - You may refine **this PROMPT.md itself** if you notice a recurring loop
   failure mode that a prompt change would prevent. Do this rarely and

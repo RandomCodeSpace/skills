@@ -3,9 +3,9 @@
   "evals": [
     {
       "id": 0,
-      "name": "setup-overnight-claude-loop",
-      "prompt": "I want to leave my Claude Code session running overnight on this Python project. The spec is to build out a small REST CRUD service for `todos` with sqlite — about 8 endpoints, validation, tests, and a Dockerfile. I have specs/01-todos.md ready but no scaffolding around it. Help me set up a Ralph-style loop that drives Claude to keep building until everything's done, but don't let it burn through my entire daily message budget.",
-      "expected_output": "Walks through: confirm goal/CLI/budget, run init.py with --adapter claude (default), move existing spec into .ralph/specs/, dry-run, then start. Calls out the LLM-call-minimizing defaults (max_iterations=20, iteration_timeout_seconds=1800), the DONE/STOP/PAUSE controls, and the initial git checkpoint. Does NOT invoke other skills.",
+      "name": "setup-overnight-copilot-loop",
+      "prompt": "I want to leave my Copilot coding agent running overnight on this Python project. The spec is to build out a small REST CRUD service for `todos` with sqlite — about 8 endpoints, validation, tests, and a Dockerfile. I have specs/01-todos.md ready but no scaffolding around it. Help me set up a Ralph-style loop that drives the coding agent to keep building until everything's done, but don't let it burn through my entire daily message budget.",
+      "expected_output": "Walks through: confirm goal/agent command/budget, run init.py with --adapter copilot or --adapter generic, move existing spec into .ralph/specs/, dry-run, then start. Explains that the Copilot adapter is a coding-agent wrapper placeholder and the operator must point command at their actual Copilot entrypoint. Calls out the LLM-call-minimizing defaults (max_iterations=20, iteration_timeout_seconds=1800), the DONE/STOP/PAUSE controls, .ralph/ being added to .gitignore on invocation, structured events.jsonl logging, and that commits/checkpoints are opt-in by default. Does NOT invoke other skills.",
       "files": []
     },
     {
@@ -34,6 +34,13 @@
       "name": "missing-or-vague-spec",
       "prompt": "I want to set up a ralph loop to 'modernize' my Express app — clean up callbacks, add types, that kind of thing. Where do I start?",
       "expected_output": "Pushes back on the spec quality before doing anything else. 'Modernize' is unverifiable; the loop will drift. Walks the user through writing concrete acceptance criteria (e.g., 'every route handler uses async/await with no callback nesting'; 'tsc --strict exits 0'; 'no any types in src/'). Only then offers to scaffold. Cites SKILL.md's 'spec quality is paid up front' principle.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "spawn-supervised-subagents",
+      "prompt": "I have 30 independent cleanup tickets and want Ralph to spawn subagents instead of running one worker forever. What should I do?",
+      "expected_output": "Explains that Ralph subagents are supervised child Ralph worker loops, not host-specific chat-tool subagents. Recommends partitioning tickets/files first, then using `python /path/to/ralph-loop/scripts/ralph.py --subagents 3` or setting `subagents.count` in .ralph/config.json. Mentions per-worker workspaces under .ralph/subagents/agent-N, inherited command/timeouts, logs in events.jsonl and subagents-summary.json, and warns that conflicting edits are still the operator's responsibility.",
       "files": []
     }
   ]
