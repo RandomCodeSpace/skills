@@ -22,6 +22,7 @@
     <modules>
         <module>skills/gitlab-helper</module>
         <module>skills/java-to-typescript</module>
+        <module>skills/mr-review</module>
         <module>skills/ralph-loop</module>
     </modules>
 

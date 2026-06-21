@@ -8,6 +8,7 @@ A monorepo of [Claude Code](https://docs.claude.com/claude-code) / Agent SDK ski
 |---|---|---|
 | [`gitlab-helper`](skills/gitlab-helper) | `io.github.randomcodespace.ai.skills:gitlab-helper` | GitLab CI/CD, pipelines, runners, and API automation. Version-aware doc grounding + `glab`/`python-gitlab` automation. |
 | [`java-to-typescript`](skills/java-to-typescript) | `io.github.randomcodespace.ai.skills:java-to-typescript` | Migrate a Java service (Spring Boot, Quarkus, Micronaut, Spring MVC) to TypeScript with four-phase orchestration, deterministic plumbing scripts, and contract-parity verification. Air-gap-friendly. |
+| [`mr-review`](skills/mr-review) | `io.github.randomcodespace.ai.skills:mr-review` | Concise GitLab Enterprise MR review for CI pipelines: use predefined `CI_*` variables and local git diff/fetch first, then `rg`, ast-grep, and available diagnostics; report only merge-relevant findings without code suggestions or noise. |
 | [`ralph-loop`](skills/ralph-loop) | `io.github.randomcodespace.ai.skills:ralph-loop` | Standalone, host-agnostic Ralph-loop driver — run any AI coding CLI (Claude Code, Codex, OpenCode, Gemini, Aider, Amp, Copilot, …) in a self-driving loop against a file-state workspace. Tuned for minimum LLM-call burn. Stdlib-only Python; no internet; no cross-skill deps. |
 
 ## Using a skill

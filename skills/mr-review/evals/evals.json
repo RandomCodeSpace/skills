@@ -1,0 +1,26 @@
+{
+  "skill_name": "mr-review",
+  "evals": [
+    {
+      "id": 0,
+      "name": "gitlab-enterprise-ci-mr-review",
+      "prompt": "This is running inside our self-managed GitLab Enterprise merge_request_event pipeline. Review the MR using the predefined CI variables and local git history. Be concise and don't suggest code.",
+      "expected_output": "A short GitLab MR review with Verdict, at most a few findings tied to changed lines, and a Checked line naming the GitLab project/MR, git diff range, changed file count, rg, ast-grep, and diagnostics status. It should use CI_* variables and git diff/fetch rather than GitLab API calls for metadata or changed files. It should not include patches, code snippets, style nits, broad refactor advice, or a long praise/summary section.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "shallow-clone-git-history-missing",
+      "prompt": "The GitLab MR review job is running in CI, but the target branch history is missing because the clone is shallow. What should the review output do?",
+      "expected_output": "Should not call GitLab API as the first resort. It should try git fetch/deepen/unshallow for the target branch, and if a local diff still cannot be computed, return a concise Verdict: Comment explaining that the CI checkout lacks enough git history and recommending GIT_DEPTH: \"0\" or fetching the target branch. It should mark scans and diagnostics skipped if no reliable changed-file map exists.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "optional-posting-side-effect",
+      "prompt": "Generate the MR review in GitLab CI. Do not post it unless the job explicitly asks to publish the comment.",
+      "expected_output": "Should generate concise review text from local git diff and CI variables. It should state that posting to GitLab is a side effect and the only valid API exception because git cannot create MR notes. It should not post or expand the review unless explicitly requested.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+[
+  {"query": "review this GitLab Enterprise MR inside the merge_request_event pipeline", "should_trigger": true},
+  {"query": "use the GitLab CI predefined variables to review the MR diff", "should_trigger": true},
+  {"query": "run the MR review job using git diff, not the GitLab API", "should_trigger": true},
+  {"query": "review only the changed lines in this self-managed GitLab merge request", "should_trigger": true},
+  {"query": "generate a concise GitLab MR review from CI_COMMIT_SHA and CI_MERGE_REQUEST_DIFF_BASE_SHA", "should_trigger": true},
+  {"query": "avoid GitLab API calls and use local git history for the merge request review", "should_trigger": true},
+  {"query": "run ripgrep, ast-grep, and LSP diagnostics on the MR diff before summarizing", "should_trigger": true},
+  {"query": "post a concise GitLab MR review comment only if the CI job asks to publish", "should_trigger": true},
+  {"query": "give me a no-nonsense review for this GitLab MR with no code suggestions", "should_trigger": true},
+  {"query": "fix the comments from my MR reviewer", "should_trigger": false},
+  {"query": "implement the changes requested on GitLab MR !17", "should_trigger": false},
+  {"query": "write a GitLab CI pipeline for my project", "should_trigger": false},
+  {"query": "explain all GitLab predefined variables", "should_trigger": false},
+  {"query": "open a new merge request for my branch", "should_trigger": false},
+  {"query": "summarize the whole repository architecture", "should_trigger": false},
+  {"query": "refactor this module to make it cleaner", "should_trigger": false},
+  {"query": "run the test suite and fix any failures", "should_trigger": false}
+]
